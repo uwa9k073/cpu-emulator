@@ -1,22 +1,45 @@
-import architecture;
+import assembler;
+import cpu;
+import emulator;
+import memory;
 
+#include <cstdint>
 #include <iostream>
+#include <string>
+#include <vector>
 
 int main() {
-    using cpu::ALU;
+    using cpu::Assembler;
+    using cpu::Emulator;
 
-    const auto add = ALU::add16(12, -7);
-    const auto sub = ALU::sub16(12, 7);
-    const auto mul = ALU::mul16(5, -3);
-    const auto longmul = ALU::mul32(30000, 30000);
+    std::vector<std::string> program_text = {
+        "        LDA     #10",
+        "        ADD     #5",
+        "        SUB     #3",
+        "        MUL     #2",
+        "        STA     Result",
+        "        HLT"
+    };
 
-    std::cout << "add16(12, -7) = " << add.value << " | zero=" << add.zero
-              << " neg=" << add.negative << " carry=" << add.carry
-              << " overflow=" << add.overflow << '\n';
+    Assembler assembler;
+    const auto assembled = assembler.assemble(program_text);
 
-    std::cout << "sub16(12, 7) = " << sub.value << '\n';
-    std::cout << "mul16(5, -3) = " << mul.value << '\n';
-    std::cout << "mul32(30000, 30000) = " << longmul.asInt32() << '\n';
+    std::vector<std::uint16_t> machine_code;
+    machine_code.reserve(assembled.size());
+
+    for (const auto& line : assembled) {
+        machine_code.push_back(line.machine_code);
+        std::cout << line.address << " : " << line.mnemonic
+                  << " " << line.operand
+                  << " => 0x" << std::hex << line.machine_code << std::dec << '\n';
+    }
+
+    Emulator emu(4096, 256);
+    emu.load_program(machine_code);
+
+    emu.run();
+
+    std::cout << "\nResult = " << emu.read_data(0) << '\n';
 
     return 0;
 }

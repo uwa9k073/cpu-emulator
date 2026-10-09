@@ -1,17 +1,18 @@
 module;
+#include <iostream>
 
+#include <stdexcept>
 #include <cctype>
 #include <cstdint>
 #include <string>
-#include <string_view>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 export module assembler;
 
-import instruction;
 import types;
+import instruction;
 
 export namespace cpu {
 
@@ -32,6 +33,7 @@ public:
         std::uint16_t pc = 0;
         for (const auto& raw_line : source_lines) {
             std::string line = trim(raw_line);
+            std::cout << line << '\n';
             if (line.empty() || line.starts_with(";")) {
                 continue;
             }
