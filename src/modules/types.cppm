@@ -33,12 +33,7 @@ enum class AddressingMode : std::uint8_t {
     Indexed
 };
 
-enum class Flag : std::uint8_t {
-    Zero = 0,
-    Negative,
-    Carry,
-    Overflow
-};
+enum class Flag : std::uint8_t { Zero = 0, Negative, Carry, Overflow };
 
 struct Flags {
     bool z = false;
@@ -105,34 +100,54 @@ struct ALUResult32 {
 
 constexpr std::string_view to_string(Register reg) noexcept {
     switch (reg) {
-        case Register::A: return "A";
-        case Register::R0: return "R0";
-        case Register::R1: return "R1";
-        case Register::R2: return "R2";
-        case Register::R3: return "R3";
-        case Register::R4: return "R4";
-        case Register::R5: return "R5";
-        case Register::R6: return "R6";
-        case Register::R7: return "R7";
-        case Register::H: return "H";
-        case Register::L: return "L";
-        case Register::PC: return "PC";
-        case Register::IR: return "IR";
-        case Register::FlagsReg: return "FLAGS";
+        case Register::A:
+            return "A";
+        case Register::R0:
+            return "R0";
+        case Register::R1:
+            return "R1";
+        case Register::R2:
+            return "R2";
+        case Register::R3:
+            return "R3";
+        case Register::R4:
+            return "R4";
+        case Register::R5:
+            return "R5";
+        case Register::R6:
+            return "R6";
+        case Register::R7:
+            return "R7";
+        case Register::H:
+            return "H";
+        case Register::L:
+            return "L";
+        case Register::PC:
+            return "PC";
+        case Register::IR:
+            return "IR";
+        case Register::FlagsReg:
+            return "FLAGS";
     }
     return "?";
 }
 
 constexpr std::string_view to_string(AddressingMode mode) noexcept {
     switch (mode) {
-        case AddressingMode::Immediate: return "#imm";
-        case AddressingMode::Direct: return "direct";
-        case AddressingMode::Register: return "reg";
-        case AddressingMode::IndirectRegister: return "(reg)";
-        case AddressingMode::Relative: return "rel";
-        case AddressingMode::Indexed: return "indexed";
+        case AddressingMode::Immediate:
+            return "#imm";
+        case AddressingMode::Direct:
+            return "direct";
+        case AddressingMode::Register:
+            return "reg";
+        case AddressingMode::IndirectRegister:
+            return "(reg)";
+        case AddressingMode::Relative:
+            return "rel";
+        case AddressingMode::Indexed:
+            return "indexed";
     }
     return "?";
 }
 
-} // namespace cpu
+}  // namespace cpu

@@ -18,7 +18,8 @@ public:
 
         const std::int16_t result = static_cast<std::int16_t>(sum & 0xFFFFu);
         const bool carry = sum > 0xFFFFu;
-        const bool overflow = ((lhs < 0) == (rhs < 0)) && ((result < 0) != (lhs < 0));
+        const bool overflow =
+            ((lhs < 0) == (rhs < 0)) && ((result < 0) != (lhs < 0));
 
         return {result, result == 0, result < 0, carry, overflow};
     }
@@ -32,9 +33,8 @@ public:
             static_cast<std::int32_t>(lhs) * static_cast<std::int32_t>(rhs);
         const std::int16_t result = static_cast<std::int16_t>(product);
 
-        const bool overflow =
-            product > std::numeric_limits<std::int16_t>::max() ||
-            product < std::numeric_limits<std::int16_t>::min();
+        const bool overflow = product > std::numeric_limits<std::int16_t>::max() ||
+                              product < std::numeric_limits<std::int16_t>::min();
 
         return {result, result == 0, result < 0, false, overflow};
     }
@@ -44,9 +44,8 @@ public:
             static_cast<std::int64_t>(lhs) + static_cast<std::int64_t>(rhs);
 
         const std::int32_t result = static_cast<std::int32_t>(sum);
-        const bool overflow =
-            (sum > std::numeric_limits<std::int32_t>::max()) ||
-            (sum < std::numeric_limits<std::int32_t>::min());
+        const bool overflow = (sum > std::numeric_limits<std::int32_t>::max()) ||
+                              (sum < std::numeric_limits<std::int32_t>::min());
 
         return {result, result == 0, result < 0, false, overflow};
     }
@@ -91,9 +90,10 @@ public:
         return value << amount;
     }
 
-    static std::int64_t shiftRight(std::int64_t value, std::uint8_t amount) noexcept {
+    static std::int64_t shiftRight(std::int64_t value, std::uint8_t amount)
+        noexcept {
         return value >> amount;
     }
 };
 
-} // namespace cpu
+}  // namespace cpu

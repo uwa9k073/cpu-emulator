@@ -17,15 +17,13 @@ class Emulator {
 public:
     Emulator()
         : data_memory_(std::make_shared<Memory>(4096)),
-          program_memory_(std::make_shared<ProgramMemory>(4096))
-    {
+          program_memory_(std::make_shared<ProgramMemory>(4096)) {
         cpu_.connect_memory(data_memory_, program_memory_);
     }
 
     explicit Emulator(std::size_t data_size, std::size_t program_size)
         : data_memory_(std::make_shared<Memory>(data_size)),
-          program_memory_(std::make_shared<ProgramMemory>(program_size))
-    {
+          program_memory_(std::make_shared<ProgramMemory>(program_size)) {
         cpu_.connect_memory(data_memory_, program_memory_);
     }
 
@@ -60,13 +58,9 @@ public:
         }
     }
 
-    [[nodiscard]] CPU& cpu() noexcept {
-        return cpu_;
-    }
+    [[nodiscard]] CPU& cpu() noexcept { return cpu_; }
 
-    [[nodiscard]] const CPU& cpu() const noexcept {
-        return cpu_;
-    }
+    [[nodiscard]] const CPU& cpu() const noexcept { return cpu_; }
 
     [[nodiscard]] std::shared_ptr<Memory> data_memory() const noexcept {
         return data_memory_;
@@ -76,9 +70,7 @@ public:
         return program_memory_;
     }
 
-    [[nodiscard]] bool halted() const noexcept {
-        return cpu_.halted();
-    }
+    [[nodiscard]] bool halted() const noexcept { return cpu_.halted(); }
 
     [[nodiscard]] std::uint16_t pc() const noexcept {
         return cpu_.get_processor().registers().pc;
@@ -124,4 +116,4 @@ private:
     CPU cpu_;
 };
 
-} // namespace cpu
+}  // namespace cpu

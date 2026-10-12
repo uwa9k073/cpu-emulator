@@ -22,8 +22,8 @@ public:
 
     void connect_memory(
         std::shared_ptr<Memory> data_memory,
-        std::shared_ptr<ProgramMemory> program_memory) noexcept
-    {
+        std::shared_ptr<ProgramMemory> program_memory
+    ) noexcept {
         data_memory_ = std::move(data_memory);
         program_memory_ = std::move(program_memory);
     }
@@ -74,7 +74,8 @@ public:
         auto& regs = processor_.registers();
         const auto instruction_word = program_memory_->read(regs.pc);
         const auto opcode = static_cast<Opcode>(instruction_word >> 8);
-        const auto operand_byte = static_cast<std::uint8_t>(instruction_word & 0xFFu);
+        const auto operand_byte =
+            static_cast<std::uint8_t>(instruction_word & 0xFFu);
 
         switch (opcode) {
             case Opcode::NOP:
@@ -93,17 +94,10 @@ public:
                 break;
             }
 
-            case Opcode::MOV: {
-                const auto dst = static_cast<Register>((operand_byte >> 4) & 0x0Fu);
-                const auto src = static_cast<Register>(operand_byte & 0x0Fu);
-                const auto src_value = processor_.get_register(src);
-                processor_.set_register(dst, src_value);
-                break;
-            }
-
             case Opcode::ADD: {
                 const auto value = static_cast<std::int16_t>(operand_byte);
-                const auto result = ALU::add16(processor_.get_register(Register::A), value);
+                const auto result =
+                    ALU::add16(processor_.get_register(Register::A), value);
                 processor_.set_register(Register::A, result.value);
                 regs.flags.z = result.zero;
                 regs.flags.n = result.negative;
@@ -114,7 +108,8 @@ public:
 
             case Opcode::SUB: {
                 const auto value = static_cast<std::int16_t>(operand_byte);
-                const auto result = ALU::sub16(processor_.get_register(Register::A), value);
+                const auto result =
+                    ALU::sub16(processor_.get_register(Register::A), value);
                 processor_.set_register(Register::A, result.value);
                 regs.flags.z = result.zero;
                 regs.flags.n = result.negative;
@@ -125,7 +120,8 @@ public:
 
             case Opcode::MUL: {
                 const auto value = static_cast<std::int16_t>(operand_byte);
-                const auto result = ALU::mul16(processor_.get_register(Register::A), value);
+                const auto result =
+                    ALU::mul16(processor_.get_register(Register::A), value);
                 processor_.set_register(Register::A, result.value);
                 regs.flags.z = result.zero;
                 regs.flags.n = result.negative;
@@ -173,7 +169,8 @@ public:
 
             case Opcode::CMP: {
                 const auto value = static_cast<std::int16_t>(operand_byte);
-                const auto result = ALU::compare(processor_.get_register(Register::A), value);
+                const auto result =
+                    ALU::compare(processor_.get_register(Register::A), value);
                 regs.flags.z = (result == 0);
                 regs.flags.n = (result < 0);
                 break;
@@ -269,14 +266,22 @@ public:
                 return;
 
             case Opcode::SHL: {
-                const auto shifted = ALU::shiftLeft(processor_.get_register(Register::A), operand_byte);
-                processor_.set_register(Register::A, static_cast<std::int16_t>(shifted));
+                const auto shifted = ALU::shiftLeft(
+                    processor_.get_register(Register::A), operand_byte
+                );
+                processor_.set_register(
+                    Register::A, static_cast<std::int16_t>(shifted)
+                );
                 break;
             }
 
             case Opcode::SHR: {
-                const auto shifted = ALU::shiftRight(processor_.get_register(Register::A), operand_byte);
-                processor_.set_register(Register::A, static_cast<std::int16_t>(shifted));
+                const auto shifted = ALU::shiftRight(
+                    processor_.get_register(Register::A), operand_byte
+                );
+                processor_.set_register(
+                    Register::A, static_cast<std::int16_t>(shifted)
+                );
                 break;
             }
 
@@ -286,19 +291,17 @@ public:
             case Opcode::CMP32:
             case Opcode::LDS:
             case Opcode::STS:
-                throw std::runtime_error("This instruction is not fully implemented yet.");
+                throw std::runtime_error(
+                    "This instruction is not fully implemented yet."
+                );
         }
 
         ++regs.pc;
     }
 
-    [[nodiscard]] bool halted() const noexcept {
-        return halted_;
-    }
+    [[nodiscard]] bool halted() const noexcept { return halted_; }
 
-    [[nodiscard]] Processor& get_processor() noexcept {
-        return processor_;
-    }
+    [[nodiscard]] Processor& get_processor() noexcept { return processor_; }
 
     [[nodiscard]] const Processor& get_processor() const noexcept {
         return processor_;
@@ -319,4 +322,4 @@ private:
     bool halted_ = false;
 };
 
-} // namespace cpu
+}  // namespace cpu

@@ -15,12 +15,9 @@ export namespace cpu {
 
 class Memory {
 public:
-    explicit Memory(std::size_t size = 4096)
-        : data_(size, 0) {};
+    explicit Memory(std::size_t size = 4096) : data_(size, 0) {};
 
-    void reset() {
-        data_.assign(data_.size(), 0);
-    }
+    void reset() { data_.assign(data_.size(), 0); }
 
     void write(std::size_t address, std::int16_t value) {
         if (address >= data_.size()) {
@@ -46,12 +43,9 @@ private:
 
 class ProgramMemory {
 public:
-    explicit ProgramMemory(std::size_t size = 4096)
-        : data_(size, 0) {}
+    explicit ProgramMemory(std::size_t size = 4096) : data_(size, 0) {}
 
-    void reset() {
-        data_.assign(data_.size(), 0);
-    }
+    void reset() { data_.assign(data_.size(), 0); }
 
     void write(std::size_t address, std::uint16_t value) {
         if (address >= data_.size()) {
@@ -73,4 +67,4 @@ private:
     std::vector<std::int16_t> data_;
 };
 
-} // namespace cpu
+}  // namespace cpu
