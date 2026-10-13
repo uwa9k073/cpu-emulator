@@ -33,8 +33,9 @@ int main() {
 
     for (const auto& line : assembled.program) {
         machine_code.push_back(line.machine_code);
-        std::cout << line.address << " : " << InstructionSet::to_string(line.opcode) << " " << line.operand
-                  << " => 0x" << std::hex << line.machine_code << std::dec << '\n';
+        std::cout << line.address << " : " << InstructionSet::to_string(line.opcode)
+                  << " " << line.operand << " => 0x" << std::hex << line.machine_code
+                  << std::dec << '\n';
     }
 
     Emulator emu(4096, 256);

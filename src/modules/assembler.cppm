@@ -24,6 +24,10 @@ struct AssemblerOutput {
     std::unordered_map<std::string, std::uint16_t> data_labels;  // адреса переменных
 };
 
+namespace {
+enum class Section { kData = 0, kProgram };
+}
+
 class Assembler {
 public:
     [[nodiscard]] AssemblerOutput assemble(
@@ -32,7 +36,7 @@ public:
         AssemblerOutput output;
         std::uint16_t pc = 0;
         std::uint16_t data_addr = 0;
-        bool in_data_section = false;
+        Section section;
 
         for (const auto& raw_line : source_lines) {
             std::string line = trim(raw_line);
@@ -41,44 +45,55 @@ public:
             }
             std::cout << line << '\n';
             if (line == ".data" || line == "DATA SECTION") {
-                in_data_section = true;
+                section = Section::kData;
                 continue;
             }
-            if (in_data_section) {
-                auto colon_pos = line.find_first_of(":");
-                std::string var_name = trim(line.substr(0, colon_pos));
-                output.data_labels[var_name] = data_addr;
-                line = trim(line.substr(colon_pos + 1));
+            if (line == ".program") {
+                section = Section::kProgram;
+                continue;
+            }
+            switch (section) {
+                case Section::kData: {
+                    auto colon_pos = line.find_first_of(":");
+                    std::string var_name = trim(line.substr(0, colon_pos));
+                    output.data_labels[var_name] = data_addr;
+                    line = trim(line.substr(colon_pos + 1));
 
-                if (line.starts_with("DW")) {
-                    // DW означает "Define Word" (32-бит число или массив)
-                    std::string values_str = trim(line.substr(2));
-                    std::vector<std::int16_t> values = parse_data_values(values_str);
-                    for (auto val : values) {
-                        output.data.push_back({"", {val}});
-                        ++data_addr;
+                    if (line.starts_with("DW")) {
+                        // DW означает "Define Word" (32-бит число или массив)
+                        std::string values_str = trim(line.substr(2));
+                        std::vector<std::int16_t> values =
+                            parse_data_values(values_str);
+                        for (auto val : values) {
+                            output.data.push_back({"", {val}});
+                            ++data_addr;
+                        }
                     }
                 }
-            } else {
-                if (ends_with_colon(line)) {
-                    std::string label = trim(line.substr(0, line.size() - 1));
-                    output.labels[label] = pc;
-                    continue;
-                }
+                break;
+                case Section::kProgram: {
+                    if (ends_with_colon(line)) {
+                        std::string label = trim(line.substr(0, line.size() - 1));
+                        output.labels[label] = pc;
+                        continue;
+                    }
 
-                output.program.push_back(
-                    {.operand = "", .raw = line, .address = pc}
-                );
-                ++pc;
+                    output.program.push_back({.operand = "", .raw = line, .address = pc}
+                    );
+                    ++pc;
+                }
+                break;
             }
         }
 
         for (auto& item : output.program) {
             auto parsed = split_mnemonic_operand(item.raw);
-            auto [machine_code] = encode_instruction(item.opcode, item.operand, output.labels);
+            auto [machine_code, addr_mode] =
+                encode_instruction(item.opcode, item.operand, output.labels);
             item.opcode = parsed.first;
             item.operand = parsed.second;
             item.machine_code = machine_code;
+            item.mode = addr_mode;
         }
 
         return output;
@@ -110,7 +125,10 @@ public:
     ) {
         switch (mnemonic) {
             case Opcode::NOP:
-                return {static_cast<std::uint16_t>(Opcode::NOP) << 8, AddressingMode::Immediate};
+                return {
+                    static_cast<std::uint16_t>(Opcode::NOP) << 8,
+                    AddressingMode::Immediate
+                };
             case Opcode::LDA:
                 return encode_load_like(Opcode::LDA, operand, labels);
             case Opcode::STA:
@@ -170,7 +188,10 @@ public:
             case Opcode::STS:
                 return encode_store_like(Opcode::STS, operand, labels);
             default:
-                throw std::runtime_error("Unknown mnemonic: " + std::string{InstructionSet::to_string(mnemonic)});
+                throw std::runtime_error(
+                    "Unknown mnemonic: " +
+                    std::string{InstructionSet::to_string(mnemonic)}
+                );
         }
     }
 
@@ -210,13 +231,18 @@ private:
         std::uint16_t value = 0;
 
         if (operand.empty()) {
-            return {(static_cast<std::uint16_t>(op) << 8) | 0, AddressingMode::Immediate};
+            return {
+                (static_cast<std::uint16_t>(op) << 8) | 0, AddressingMode::Immediate
+            };
         }
 
         if (operand.starts_with("#")) {
             const std::string number = trim(operand.substr(1));
             value = static_cast<std::uint16_t>(std::stoi(number));
-            return {(static_cast<std::uint16_t>(op) << 8) | value, AddressingMode::Immediate};
+            return {
+                (static_cast<std::uint16_t>(op) << 8) | value,
+                AddressingMode::Immediate
+            };
         }
 
         if (auto it = labels.find(operand); it != labels.end()) {
@@ -226,7 +252,10 @@ private:
 
         if (is_register_name(operand)) {
             value = register_id(operand);
-            return {(static_cast<std::uint16_t>(op) << 8) | value, AddressingMode::Register};
+            return {
+                (static_cast<std::uint16_t>(op) << 8) | value,
+                AddressingMode::Register
+            };
         }
 
         if (operand.starts_with("(") && operand.ends_with(")")) {
