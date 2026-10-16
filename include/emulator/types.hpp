@@ -1,11 +1,11 @@
-module;
-
+#pragma once
 #include <cstdint>
 #include <string_view>
 
-export module types;
+#include <userver/utils/string_literal.hpp>
+#include <userver/utils/trivial_map.hpp>
 
-export namespace cpu {
+namespace emulator {
 
 enum class Register : std::uint8_t {
     A = 0,
@@ -21,16 +21,38 @@ enum class Register : std::uint8_t {
     L,
     PC,
     IR,
-    FlagsReg
+    FR
 };
 
 enum class AddressingMode : std::uint8_t {
-    Immediate = 0,
-    Direct,
-    Register,
-    IndirectRegister,
-    Relative,
-    Indexed
+    Immediate = 0b00,
+    Direct = 0b01,
+    Register = 0b10,
+    IndirectRegister = 0b11
+};
+
+enum class DataWidth {
+    kDB = 1,  // 1 byte
+    kDW = 2,  // 2 byte
+    kDD = 4,  // 4 byte
+    kDQ = 8,  // 8 byte
+};
+
+constexpr userver::utils::TrivialBiMap kDataWidthToString = [](auto selector) {
+    return selector()
+        .Case(DataWidth::kDB, "DB")
+        .Case(DataWidth::kDW, "DW")
+        .Case(DataWidth::kDD, "DD")
+        .Case(DataWidth::kDQ, "DQ");
+};
+
+
+userver::utils::TrivialBiMap kDataWidthToMachineCode = [](auto selector) {
+    return selector()
+        .Case(DataWidth::kDB, 0)
+        .Case(DataWidth::kDW, 1)
+        .Case(DataWidth::kDD, 2)
+        .Case(DataWidth::kDQ, 3);
 };
 
 enum class Flag : std::uint8_t { Zero = 0, Negative, Carry, Overflow };
@@ -98,56 +120,27 @@ struct ALUResult32 {
     bool overflow = false;
 };
 
+constexpr userver::utils::TrivialBiMap kRegisterNameString = [](auto selector) {
+    return selector()
+        .Case(Register::A, "A")
+        .Case(Register::R0, "R0")
+        .Case(Register::R1, "R1")
+        .Case(Register::R2, "R2")
+        .Case(Register::R3, "R3")
+        .Case(Register::R4, "R4")
+        .Case(Register::R5, "R5")
+        .Case(Register::R6, "R6")
+        .Case(Register::R7, "R7")
+        .Case(Register::H, "H")
+        .Case(Register::L, "L")
+        .Case(Register::PC, "PC")
+        .Case(Register::IR, "IR")
+        .Case(Register::FR, "FR");
+};
+
 constexpr std::string_view to_string(Register reg) noexcept {
-    switch (reg) {
-        case Register::A:
-            return "A";
-        case Register::R0:
-            return "R0";
-        case Register::R1:
-            return "R1";
-        case Register::R2:
-            return "R2";
-        case Register::R3:
-            return "R3";
-        case Register::R4:
-            return "R4";
-        case Register::R5:
-            return "R5";
-        case Register::R6:
-            return "R6";
-        case Register::R7:
-            return "R7";
-        case Register::H:
-            return "H";
-        case Register::L:
-            return "L";
-        case Register::PC:
-            return "PC";
-        case Register::IR:
-            return "IR";
-        case Register::FlagsReg:
-            return "FLAGS";
-    }
-    return "?";
+    return kRegisterNameString.TryFind(reg).value_or(
+        userver::utils::StringLiteral{"?"}
+    );
 }
-
-constexpr std::string_view to_string(AddressingMode mode) noexcept {
-    switch (mode) {
-        case AddressingMode::Immediate:
-            return "#imm";
-        case AddressingMode::Direct:
-            return "direct";
-        case AddressingMode::Register:
-            return "reg";
-        case AddressingMode::IndirectRegister:
-            return "(reg)";
-        case AddressingMode::Relative:
-            return "rel";
-        case AddressingMode::Indexed:
-            return "indexed";
-    }
-    return "?";
-}
-
-}  // namespace cpu
+}  // namespace emulator
