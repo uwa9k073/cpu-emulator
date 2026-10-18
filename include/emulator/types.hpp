@@ -47,7 +47,6 @@ constexpr userver::utils::TrivialBiMap kDataWidthToString = [](auto selector) {
         .Case(DataWidth::kDQ, "DQ");
 };
 
-
 constexpr userver::utils::TrivialBiMap kDataWidthToMachineCode = [](auto selector) {
     return selector()
         .Case(DataWidth::kDB, 0)

@@ -105,11 +105,26 @@ void CPU::execute_one() {
             } else if (mode == AddressingMode::Immediate) {
                 value = static_cast<std::uint16_t>(operand_byte);
             } else if (mode == AddressingMode::Direct) {
-                value = data_memory_->read(operand_byte);
-            } else if (mode == AddressingMode::IndirectRegister) {
-                value = data_memory_->Read(
-                    processor_.get_register(static_cast<Register>(operand_byte), static_cast<size_t>(data_width.value()))
+                // Variable width read: Use Read() and reinterpret cast the result to
+                // uint16_t
+                auto mem_view = data_memory_->Read(
+                    operand_byte, static_cast<size_t>(data_width.value())
                 );
+                value = *(reinterpret_cast<const std::uint16_t*>(mem_view.data()));
+            } else if (mode == AddressingMode::IndirectRegister) {
+                // value = data_memory_->Read(
+                //     processor_.get_register(static_cast<Register>(operand_byte),
+                //     static_cast<size_t>(data_width.value()))
+                // );
+                //
+
+                // Variable width read: Use Read() and reinterpret cast the result to
+                // uint16_t
+                auto mem_view = data_memory_->Read(
+                    processor_.get_register(static_cast<Register>(operand_byte)),
+                    static_cast<size_t>(data_width.value())
+                );
+                value = *(reinterpret_cast<const std::uint16_t*>(mem_view.data()));
             }
             processor_.set_register(Register::A, value);
             processor_.update_flags_from_result(value);

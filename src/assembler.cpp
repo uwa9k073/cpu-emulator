@@ -56,11 +56,13 @@ constexpr int OPCODE_SHIFT = 12;
                     throw std::runtime_error{"Variable name must start with letter"};
                 }
                 std::string var_name = elements.front().substr(0, colon_pos);
+                output.data_labels[var_name] = data_addr;
                 std::cout << "VARNAME: " << var_name << '\n';
 
                 auto width_code = kDataWidthToString.TryFindBySecond(elements[1])
                                       .value_or(DataWidth::kDW);
-                output.data_labels[var_name] = {data_addr, width_code};
+
+                output.data_width[data_addr] = width_code;
 
                 std::vector<std::uint8_t> values;
                 values.reserve((elements.size() - 2) * static_cast<int>(width_code));
@@ -174,6 +176,10 @@ constexpr int OPCODE_SHIFT = 12;
             DataWidth width;
             switch (item.mode) {
                 case AddressingMode::Register:
+                    operand = static_cast<std::uint16_t>(
+                        kRegisterNameString.TryFindBySecond(item.operand).value()
+                    );
+                    break;
                 case AddressingMode::IndirectRegister:
                     operand = static_cast<std::uint16_t>(
                         kRegisterNameString.TryFindBySecond(item.operand).value()
@@ -183,14 +189,14 @@ constexpr int OPCODE_SHIFT = 12;
                     if (std::isdigit(item.operand.front())) {
                         operand = userver::utils::FromString<int8_t>(item.operand);
                     } else {
-                        const auto& label = output.data_labels.at(item.operand);
-                        operand = label.first;
+                        const auto& addr = output.data_labels.at(item.operand);
+                        operand = addr;
                     }
                     break;
                 case AddressingMode::Direct:
-                    const auto& label = output.data_labels.at(item.operand);
-                    operand = label.first;
-                    width = label.second;
+                    const auto& addr = output.data_labels.at(item.operand);
+                    operand = addr;
+                    width = output.data_width.at(addr);
                     instruction |=
                         (kDataWidthToMachineCode.TryFind(width).value()
                          << WIDTH_SHIFT);

@@ -2,6 +2,7 @@
 
 #include <cctype>
 #include <cstdint>
+#include <map>
 #include <span>
 #include <string>
 #include <unordered_map>
@@ -19,10 +20,13 @@ public:
         std::vector<std::pair<std::string, std::vector<std::uint8_t>>>
             data;  // переменные
         std::unordered_map<std::string, std::uint16_t> labels;  // программные метки
-        std::unordered_map<std::string, std::pair<std::uint16_t, DataWidth>>
+        std::unordered_map<std::string, std::uint16_t>
             data_labels;  // адреса переменных
+        std::map<std::uint16_t, DataWidth> data_width;
     };
-    [[nodiscard]] AssemblerOutput Assemble(std::span<const std::string_view> source_lines);
+    [[nodiscard]] AssemblerOutput Assemble(
+        std::span<const std::string_view> source_lines
+    );
 };
 
 }  // namespace emulator
