@@ -1,18 +1,22 @@
+#include <cstddef>
 #include <cstdint>
 #include <emulator/cpu.hpp>
 #include <emulator/instruction.hpp>
 #include <emulator/types.hpp>
+#include <iostream>
+#include <optional>
 
 namespace emulator {
 
 namespace {
 
 constexpr uint16_t OPERAND_MASK = 0x03FF;       // 10 бит: 0000 0011 1111 1111
-constexpr uint16_t DATA_OPERAND_MASK = 0x00FF;  // 10 бит: 0000 0011 1111 1111
-constexpr uint16_t ADDR_MODE_MASK = 0x0C00;     // 2 бита:  0000 1100 0000 0000
-constexpr uint16_t OPCODE_MASK = 0xF000;        // 4 бита:  1111 0000 0000 0000
-
+constexpr uint16_t DATA_OPERAND_MASK = 0x00FF;  // 10 бит: 0000 0000 1111 1111
+constexpr uint16_t ADDR_MODE_MASK = 0x0C00;     // 2 бита: 0000 1100 0000 0000
+constexpr uint16_t OPCODE_MASK = 0xF000;        // 4 бита: 1111 0000 0000 0000
+constexpr uint16_t DATA_WIDTH_MASK = 0x0300;    // 2 бита: 0000 0011 0000 0000
 constexpr int OPERAND_SHIFT = 0;
+constexpr int DATA_WIDTH_SHIFT = 8;
 constexpr int ADDR_MODE_SHIFT = 10;
 constexpr int OPCODE_SHIFT = 12;
 }  // namespace
@@ -75,12 +79,24 @@ void CPU::execute_one() {
     const auto mode = static_cast<AddressingMode>(
         (instruction_word & ADDR_MODE_MASK) >> ADDR_MODE_SHIFT
     );
-    const auto operand_byte = static_cast<std::uint16_t>(
-        (instruction_word &
-         (mode == AddressingMode::Direct ? DATA_OPERAND_MASK : OPERAND_MASK)) >>
-        OPERAND_SHIFT
-    );
 
+    std::uint16_t operand_byte;
+    std::optional<DataWidth> data_width;
+
+    if (mode == AddressingMode::Direct) {
+        data_width =
+            kDataWidthToMachineCode.TryFindBySecond(static_cast<std::uint16_t>(
+                (instruction_word & DATA_WIDTH_MASK) >> DATA_WIDTH_SHIFT
+            ));
+
+        operand_byte = static_cast<std::uint16_t>(
+            (instruction_word & DATA_OPERAND_MASK) >> OPERAND_SHIFT
+        );
+    } else {
+        operand_byte = static_cast<std::uint16_t>(
+            (instruction_word & OPERAND_MASK) >> OPERAND_SHIFT
+        );
+    }
     switch (opcode) {
         case Opcode::kLDA: {
             std::uint16_t value = 0;
@@ -91,8 +107,8 @@ void CPU::execute_one() {
             } else if (mode == AddressingMode::Direct) {
                 value = data_memory_->read(operand_byte);
             } else if (mode == AddressingMode::IndirectRegister) {
-                value = data_memory_->read(
-                    processor_.get_register(static_cast<Register>(operand_byte))
+                value = data_memory_->Read(
+                    processor_.get_register(static_cast<Register>(operand_byte), static_cast<size_t>(data_width.value()))
                 );
             }
             processor_.set_register(Register::A, value);
@@ -136,9 +152,22 @@ void CPU::execute_one() {
         }
 
         case Opcode::kSUB: {
-            const auto value = static_cast<std::int16_t>(operand_byte);
+            std::uint16_t value = 0;
+
+            if (mode == AddressingMode::Register) {
+                value = processor_.get_register(static_cast<Register>(operand_byte));
+            } else if (mode == AddressingMode::IndirectRegister) {
+                value = data_memory_->read(
+                    processor_.get_register(static_cast<Register>(operand_byte))
+                );
+            } else if (mode == AddressingMode::Direct) {
+                value = data_memory_->read(operand_byte);
+            } else {
+                value = operand_byte;
+            }
             const auto result =
                 ALU::sub16(processor_.get_register(Register::A), value);
+
             processor_.set_register(Register::A, result.value);
             regs.flags.z = result.zero;
             regs.flags.n = result.negative;
@@ -148,17 +177,31 @@ void CPU::execute_one() {
         }
 
         case Opcode::kMUL: {
-            const auto value = static_cast<std::int16_t>(operand_byte);
+            std::uint16_t value = 0;
+
+            if (mode == AddressingMode::Register) {
+                value = processor_.get_register(static_cast<Register>(operand_byte));
+            } else if (mode == AddressingMode::IndirectRegister) {
+                value = data_memory_->read(
+                    processor_.get_register(static_cast<Register>(operand_byte))
+                );
+            } else if (mode == AddressingMode::Direct) {
+                value = data_memory_->read(operand_byte);
+            } else {
+                value = operand_byte;
+            }
             const auto result =
-                ALU::mul16(processor_.get_register(Register::A), value);
-            processor_.set_register(Register::A, result.value);
+                ALU::mul32(processor_.get_register(Register::A), value);
+            processor_.set_register(Register::A, result.value.low);
+            if (result.overflow) {
+                processor_.set_register(Register::R4, result.value.high);
+            }
             regs.flags.z = result.zero;
             regs.flags.n = result.negative;
             regs.flags.c = result.carry;
             regs.flags.o = result.overflow;
             break;
         }
-
         case Opcode::kJNZ: {
             if (!regs.flags.z) {
                 regs.pc = operand_byte;
@@ -186,7 +229,34 @@ void CPU::execute_one() {
         case Opcode::kHLT:
             halted_ = true;
             return;
-        case Opcode::kADC:
+        case Opcode::kADC: {
+            std::uint16_t value = 0;
+
+            if (mode == AddressingMode::Register) {
+                value = processor_.get_register(static_cast<Register>(operand_byte));
+            } else if (mode == AddressingMode::IndirectRegister) {
+                value = data_memory_->read(
+                    processor_.get_register(static_cast<Register>(operand_byte))
+                );
+            } else if (mode == AddressingMode::Direct) {
+                value = data_memory_->read(operand_byte);
+            } else {
+                value = operand_byte;
+            }
+
+            const auto result =
+                ALU::add32(processor_.get_register(Register::A), value);
+            processor_.set_register(Register::A, result.value.low);
+            if (result.overflow) {
+                processor_.set_register(Register::R4, result.value.high);
+            }
+            regs.flags.z = result.zero;
+            regs.flags.n = result.negative;
+            regs.flags.c = result.carry;
+            regs.flags.o = result.overflow;
+
+            break;
+        }
         case Opcode::kSBB:
         case Opcode::kCLC:
         case Opcode::kCMC:

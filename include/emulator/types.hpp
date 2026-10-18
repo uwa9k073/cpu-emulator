@@ -1,4 +1,5 @@
 #pragma once
+
 #include <cstdint>
 #include <string_view>
 
@@ -47,7 +48,7 @@ constexpr userver::utils::TrivialBiMap kDataWidthToString = [](auto selector) {
 };
 
 
-userver::utils::TrivialBiMap kDataWidthToMachineCode = [](auto selector) {
+constexpr userver::utils::TrivialBiMap kDataWidthToMachineCode = [](auto selector) {
     return selector()
         .Case(DataWidth::kDB, 0)
         .Case(DataWidth::kDW, 1)
@@ -72,17 +73,17 @@ struct Flags {
 };
 
 struct Registers {
-    std::int16_t a = 0;
-    std::int16_t r0 = 0;
-    std::int16_t r1 = 0;
-    std::int16_t r2 = 0;
-    std::int16_t r3 = 0;
-    std::int16_t r4 = 0;
-    std::int16_t r5 = 0;
-    std::int16_t r6 = 0;
-    std::int16_t r7 = 0;
-    std::int16_t h = 0;
-    std::int16_t l = 0;
+    std::uint16_t a = 0;
+    std::uint16_t r0 = 0;
+    std::uint16_t r1 = 0;
+    std::uint16_t r2 = 0;
+    std::uint16_t r3 = 0;
+    std::uint16_t r4 = 0;
+    std::uint16_t r5 = 0;
+    std::uint16_t r6 = 0;
+    std::uint16_t r7 = 0;
+    std::uint16_t h = 0;
+    std::uint16_t l = 0;
     std::uint16_t pc = 0;
     std::uint16_t ir = 0;
     Flags flags{};
@@ -113,7 +114,7 @@ struct ALUResult16 {
 };
 
 struct ALUResult32 {
-    std::int32_t value = 0;
+    LongWord value{.low = 0, .high = 0};
     bool zero = false;
     bool negative = false;
     bool carry = false;

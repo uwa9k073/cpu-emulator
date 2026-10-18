@@ -18,9 +18,9 @@ public:
 
     const Flags& flags() const noexcept;
 
-    void set_register(Register reg, std::int16_t value) noexcept;
+    void set_register(Register reg, std::uint16_t value) noexcept;
 
-    [[nodiscard]] std::int16_t get_register(Register reg) const noexcept;
+    [[nodiscard]] std::uint16_t get_register(Register reg) const noexcept;
 
     void update_flags_from_result(std::int16_t value) noexcept;
 

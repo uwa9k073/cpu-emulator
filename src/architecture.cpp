@@ -12,7 +12,7 @@ Flags& Processor::flags() noexcept { return regs_.flags; }
 
 const Flags& Processor::flags() const noexcept { return regs_.flags; }
 
-void Processor::set_register(Register reg, std::int16_t value) noexcept {
+void Processor::set_register(Register reg, std::uint16_t value) noexcept {
     switch (reg) {
         case Register::A:
             regs_.a = value;
@@ -58,7 +58,7 @@ void Processor::set_register(Register reg, std::int16_t value) noexcept {
     }
 }
 
-[[nodiscard]] std::int16_t Processor::get_register(Register reg) const noexcept {
+[[nodiscard]] std::uint16_t Processor::get_register(Register reg) const noexcept {
     switch (reg) {
         case Register::A:
             return regs_.a;

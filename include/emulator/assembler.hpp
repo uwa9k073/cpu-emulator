@@ -22,7 +22,7 @@ public:
         std::unordered_map<std::string, std::pair<std::uint16_t, DataWidth>>
             data_labels;  // адреса переменных
     };
-    [[nodiscard]] AssemblerOutput Assemble(std::span<std::string> source_lines);
+    [[nodiscard]] AssemblerOutput Assemble(std::span<const std::string_view> source_lines);
 };
 
 }  // namespace emulator

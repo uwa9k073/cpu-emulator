@@ -9,6 +9,8 @@
 #include <string_view>
 #include <userver/utils/from_string.hpp>
 
+#include <userver/utils/text.hpp>
+
 namespace emulator {
 
 namespace {
@@ -24,7 +26,7 @@ constexpr int OPCODE_SHIFT = 12;
 }  // namespace
 
 [[nodiscard]] Assembler::AssemblerOutput Assembler::Assemble(
-    std::span<std::string> source_lines
+    std::span<const std::string_view> source_lines
 ) {
     AssemblerOutput output;
     std::uint16_t pc = 0;
@@ -35,8 +37,9 @@ constexpr int OPCODE_SHIFT = 12;
         if (raw_line.empty() || raw_line.front() == ';') {
             continue;
         }
-        const auto& elements =
-            userver::utils::text::Split(userver::utils::text::Trim(raw_line), " ");
+        const auto& elements = userver::utils::text::Split(
+            userver::utils::text::TrimView(raw_line), " "
+        );
 
         if (elements.front() == ".data") {
             section = Section::kData;
@@ -53,6 +56,7 @@ constexpr int OPCODE_SHIFT = 12;
                     throw std::runtime_error{"Variable name must start with letter"};
                 }
                 std::string var_name = elements.front().substr(0, colon_pos);
+                std::cout << "VARNAME: " << var_name << '\n';
 
                 auto width_code = kDataWidthToString.TryFindBySecond(elements[1])
                                       .value_or(DataWidth::kDW);
@@ -89,6 +93,7 @@ constexpr int OPCODE_SHIFT = 12;
                 }
 
                 output.data.push_back({var_name, values});
+                data_addr += values.size();
                 break;
             }
             case Section::kProgram: {
@@ -96,6 +101,7 @@ constexpr int OPCODE_SHIFT = 12;
                 if (ends_with_colon(elements.front())) {
                     std::string label =
                         elements.front().substr(0, elements.front().size() - 1);
+                    std::cout << label << '\n';
                     output.labels[label] = pc;
                     if (elements.size() == 1) {
                         continue;
@@ -159,8 +165,12 @@ constexpr int OPCODE_SHIFT = 12;
         std::uint16_t instruction = 0;
         instruction |= (static_cast<uint16_t>(item.opcode) << OPCODE_SHIFT);
         instruction |= (static_cast<uint16_t>(item.mode) << ADDR_MODE_SHIFT);
-        if (item.opcode != Opcode::kHLT) {
-            std::uint16_t operand;
+        std::uint16_t operand = 0;
+        if (item.opcode == Opcode::kJNZ) {
+            operand = output.labels[item.operand];
+
+            std::cout << "OPERAND: " << item.operand << ',' << operand << '\n';
+        } else if (item.opcode != Opcode::kHLT) {
             DataWidth width;
             switch (item.mode) {
                 case AddressingMode::Register:
@@ -178,9 +188,7 @@ constexpr int OPCODE_SHIFT = 12;
                     }
                     break;
                 case AddressingMode::Direct:
-                    std::cout << "NOT OUT OF RANGE 1'\n";
                     const auto& label = output.data_labels.at(item.operand);
-                    std::cout << "NOT OUT OF RANGE 2'\n";
                     operand = label.first;
                     width = label.second;
                     instruction |=
@@ -188,8 +196,8 @@ constexpr int OPCODE_SHIFT = 12;
                          << WIDTH_SHIFT);
                     break;
             }
-            instruction |= (operand << OPERAND_SHIFT);
         }
+        instruction |= (operand << OPERAND_SHIFT);
 
         item.machine_code = instruction;
     }

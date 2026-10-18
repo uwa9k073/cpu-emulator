@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <emulator/types.hpp>
+#include <span>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -21,7 +22,7 @@ public:
     std::int16_t read(std::size_t address);
 
     std::span<const std::uint8_t> Read(std::size_t address, std::size_t size);
-    void Write(std::size_t address, uint16_t data);
+    void Write(std::size_t address, std::span<const std::uint8_t> data);
 
     std::size_t size() const noexcept;
 

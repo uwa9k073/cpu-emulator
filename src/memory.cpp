@@ -4,7 +4,7 @@
 
 namespace emulator {
 
-Memory::Memory(std::size_t size) : data_(size, 0){};
+Memory::Memory(std::size_t size) : data_(size, 0) {};
 
 void Memory::reset() { data_.assign(data_.size(), 0); }
 
@@ -25,7 +25,12 @@ std::int16_t Memory::read(std::size_t address) {
 std::span<const std::uint8_t> Memory::Read(std::size_t address, std::size_t size) {
     return std::span{data_.data() + address, size};
 }
-void Memory::Write(std::size_t address, uint16_t data) {}
+void Memory::Write(std::size_t address, std::span<const std::uint8_t> data) {
+    if (address + data.size() > data_.size() || address + data.size() < address) {
+        throw std::out_of_range("Memory write out of bounds");
+    }
+    std::copy(data.begin(), data.end(), data_.begin() + address);
+}
 
 std::size_t Memory::size() const noexcept { return data_.size(); }
 

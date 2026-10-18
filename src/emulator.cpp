@@ -1,4 +1,5 @@
 #include <emulator/emulator.hpp>
+#include <emulator/types.hpp>
 #include <iostream>
 
 namespace emulator {
@@ -42,6 +43,9 @@ void Emulator::step() {
 
 void Emulator::run() {
     while (!cpu_.halted()) {
+        std::cout << "R3: " << cpu_.get_processor().get_register(Register::R3)
+                  << '\n';
+        std::cout << "A: " << cpu_.get_processor().get_register(Register::A) << '\n';
         step();
     }
 }
