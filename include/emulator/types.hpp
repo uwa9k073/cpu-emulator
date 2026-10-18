@@ -112,6 +112,24 @@ struct ALUResult16 {
     bool overflow = false;
 };
 
+// Результат 32-битной операции: полное значение + флаги.
+// carry == true, если результат не влезает в 16 бит (старшие 16 бит ненулевые).
+// overflow == true, если знаковое 32-битное значение не влезает в int16.
+struct LongResult {
+    std::uint32_t value = 0;
+    bool zero = false;
+    bool negative = false;
+    bool carry = false;
+    bool overflow = false;
+
+    [[nodiscard]] std::uint16_t low() const noexcept {
+        return static_cast<std::uint16_t>(value & 0xFFFFu);
+    }
+    [[nodiscard]] std::uint16_t high() const noexcept {
+        return static_cast<std::uint16_t>(value >> 16);
+    }
+};
+
 struct ALUResult32 {
     LongWord value{.low = 0, .high = 0};
     bool zero = false;

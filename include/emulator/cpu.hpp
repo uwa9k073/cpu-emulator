@@ -26,6 +26,10 @@ public:
     void load_program(const std::vector<std::uint16_t>& machine_code);
 
     [[nodiscard]] std::optional<std::uint16_t> fetch() const;
+
+    // Извлекает значение операнда инструкции с учетом режима адресации.
+    std::uint32_t resolve_operand(std::uint16_t instruction_word);
+
     void execute_one();
 
     [[nodiscard]] bool halted() const noexcept;

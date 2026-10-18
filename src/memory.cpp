@@ -23,6 +23,9 @@ std::int16_t Memory::read(std::size_t address) {
 }
 
 std::span<const std::uint8_t> Memory::Read(std::size_t address, std::size_t size) {
+    if (address >= data_.size() || size > data_.size() - address) {
+        throw std::out_of_range("Memory read out of bounds");
+    }
     return std::span{data_.data() + address, size};
 }
 void Memory::Write(std::size_t address, std::span<const std::uint8_t> data) {
