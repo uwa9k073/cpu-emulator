@@ -22,7 +22,7 @@ public:
 
     [[nodiscard]] std::uint16_t get_register(Register reg) const noexcept;
 
-    void update_flags_from_result(std::int16_t value) noexcept;
+    void update_flags_from_result(std::uint16_t value) noexcept;
 
 private:
     Registers regs_{};

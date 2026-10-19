@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bitset>
 #include <cstdint>
 #include <string_view>
 
@@ -8,7 +9,9 @@
 
 namespace emulator {
 
-enum class Register : std::uint8_t {
+using MachineWord = std::uint32_t;
+
+enum class Register : std::uint16_t {
     A = 0,
     R0,
     R1,
@@ -88,6 +91,7 @@ struct Registers {
     Flags flags{};
 };
 
+
 struct LongWord {
     std::uint16_t low = 0;
     std::uint16_t high = 0;
@@ -144,3 +148,53 @@ constexpr std::string_view to_string(Register reg) noexcept {
     );
 }
 }  // namespace emulator
+
+
+
+template <>
+struct fmt::formatter<emulator::Registers> {
+    // Default to hex ('x'), allow decimal ('d')
+    char presentation = 'x';
+
+    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+        auto it = ctx.begin(), end = ctx.end();
+        if (it != end && (*it == 'x' || *it == 'd')) {
+            presentation = *it++;
+        }
+        if (it != end && *it != '}') {
+            throw fmt::format_error("invalid format");
+        }
+        return it;
+    }
+
+    template <typename FormatContext>
+    auto format(const emulator::Registers& r, FormatContext& ctx) const -> decltype(ctx.out()) {
+        if (presentation == 'x') {
+            return fmt::format_to(ctx.out(),
+                "Registers {{\n"
+                "  {:<4} = 0x{:04X}   {:<4} = 0x{:04X}   {:<4} = 0x{:04X}\n"
+                "  {:<4} = 0x{:04X}   {:<4} = 0x{:04X}   {:<4} = 0x{:04X}   {:<4} = 0x{:04X}\n"
+                "  {:<4} = 0x{:04X}   {:<4} = 0x{:04X}   {:<4} = 0x{:04X}   {:<4} = 0x{:04X}\n"
+                "  {:<4} = 0x{:04X}   {:<4} = 0x{:04X}\n"
+                "}}",
+                "a", r.a, "pc", r.pc, "ir", r.ir,
+                "r0", r.r0, "r1", r.r1, "r2", r.r2, "r3", r.r3,
+                "r4", r.r4, "r5", r.r5, "r6", r.r6, "r7", r.r7,
+                "h", r.h, "l", r.l
+            );
+        } else {
+            return fmt::format_to(ctx.out(),
+                "Registers {{\n"
+                "  {:<4} = {:<5}   {:<4} = {:<5}   {:<4} = {:<5}\n"
+                "  {:<4} = {:<5}   {:<4} = {:<5}   {:<4} = {:<5}   {:<4} = {:<5}\n"
+                "  {:<4} = {:<5}   {:<4} = {:<5}   {:<4} = {:<5}   {:<4} = {:<5}\n"
+                "  {:<4} = {:<5}   {:<4} = {:<5}\n"
+                "}}",
+                "a", r.a, "pc", r.pc, "ir", r.ir,
+                "r0", r.r0, "r1", r.r1, "r2", r.r2, "r3", r.r3,
+                "r4", r.r4, "r5", r.r5, "r6", r.r6, "r7", r.r7,
+                "h", r.h, "l", r.l
+            );
+        }
+    }
+};

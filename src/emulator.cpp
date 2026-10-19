@@ -22,9 +22,7 @@ void Emulator::reset() {
     cpu_.reset();
 }
 
-void Emulator::load_program(const std::vector<std::uint16_t>& code) {
-    cpu_.load_program(code);
-}
+void Emulator::load_program(std::span<MachineWord> code) { cpu_.load_program(code); }
 
 void Emulator::load_data(std::size_t address, std::span<const std::uint8_t> data) {
     if (!data_memory_) {
@@ -36,18 +34,20 @@ void Emulator::load_data(std::size_t address, std::span<const std::uint8_t> data
 }
 
 void Emulator::step() {
+    std::cout << fmt::format("{}", cpu_.get_processor().registers()) << '\n';
     if (!cpu_.halted()) {
         cpu_.execute_one();
     }
 }
 
 void Emulator::run() {
+    int counter = 0;
     while (!cpu_.halted()) {
-        std::cout << "R3: " << cpu_.get_processor().get_register(Register::R3)
-                  << '\n';
-        std::cout << "A: " << cpu_.get_processor().get_register(Register::A) << '\n';
         step();
+        ++counter;
     }
+
+    std::cout << "COUNT OF INSTRUCTIONS: " << counter << '\n';
 }
 
 [[nodiscard]] CPU& Emulator::cpu() noexcept { return cpu_; }

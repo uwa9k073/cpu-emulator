@@ -20,7 +20,7 @@ public:
 
     void reset();
 
-    void load_program(const std::vector<std::uint16_t>& code);
+    void load_program(std::span<MachineWord> code);
 
     void load_data(std::size_t address, std::span<const std::uint8_t> data);
 

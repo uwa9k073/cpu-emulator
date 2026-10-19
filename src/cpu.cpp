@@ -3,22 +3,25 @@
 #include <emulator/cpu.hpp>
 #include <emulator/instruction.hpp>
 #include <emulator/types.hpp>
+#include <ios>
 #include <iostream>
+#include <iterator>
 #include <optional>
+#include <vector>
 
 namespace emulator {
 
 namespace {
 
-constexpr uint16_t OPERAND_MASK = 0x03FF;       // 10 бит: 0000 0011 1111 1111
-constexpr uint16_t DATA_OPERAND_MASK = 0x00FF;  // 10 бит: 0000 0000 1111 1111
-constexpr uint16_t ADDR_MODE_MASK = 0x0C00;     // 2 бита: 0000 1100 0000 0000
-constexpr uint16_t OPCODE_MASK = 0xF000;        // 4 бита: 1111 0000 0000 0000
-constexpr uint16_t DATA_WIDTH_MASK = 0x0300;    // 2 бита: 0000 0011 0000 0000
+constexpr uint16_t OPERAND_MASK = 0x03FF;        // 10 бит: 0000 0011 1111 1111
+constexpr uint16_t DATA_OPERAND_MASK = 0x00FF;   // 10 бит: 0000 0000 1111 1111
+constexpr uint16_t ADDR_MODE_MASK = 0x0C00;      // 2 бита: 0000 1100 0000 0000
+constexpr MachineWord OPCODE_MASK = 0xF0000000;  // 4 бита: 1111 0000 0000 0000
+constexpr uint16_t DATA_WIDTH_MASK = 0x0300;     // 2 бита: 0000 0011 0000 0000
 constexpr int OPERAND_SHIFT = 0;
-constexpr int DATA_WIDTH_SHIFT = 8;
-constexpr int ADDR_MODE_SHIFT = 10;
-constexpr int OPCODE_SHIFT = 12;
+constexpr int DATA_WIDTH_SHIFT = 24;
+constexpr int ADDR_MODE_SHIFT = 26;
+constexpr int OPCODE_SHIFT = 28;
 }  // namespace
 
 void CPU::connect_memory(
@@ -40,7 +43,7 @@ void CPU::reset() {
     }
 }
 
-void CPU::load_program(const std::vector<std::uint16_t>& machine_code) {
+void CPU::load_program(std::span<MachineWord> machine_code) {
     if (!program_memory_) {
         throw std::runtime_error("Program memory is not connected.");
     }
@@ -55,7 +58,7 @@ void CPU::load_program(const std::vector<std::uint16_t>& machine_code) {
     halted_ = false;
 }
 
-[[nodiscard]] std::optional<std::uint16_t> CPU::fetch() const {
+[[nodiscard]] std::optional<MachineWord> CPU::fetch() const {
     if (!program_memory_) {
         return std::nullopt;
     }
@@ -74,29 +77,27 @@ void CPU::execute_one() {
 
     auto& regs = processor_.registers();
     const auto instruction_word = program_memory_->read(regs.pc);
-    const auto opcode =
-        static_cast<Opcode>((instruction_word & OPCODE_MASK) >> OPCODE_SHIFT);
+    const auto opcode = static_cast<Opcode>(
+        static_cast<std::uint16_t>(instruction_word >> OPCODE_SHIFT) & 0x000f
+    );
+
+    std::cout << "CMD: " << std::hex << static_cast<uint16_t>(opcode) << std::dec
+              << '\n';
     const auto mode = static_cast<AddressingMode>(
-        (instruction_word & ADDR_MODE_MASK) >> ADDR_MODE_SHIFT
+        static_cast<std::uint8_t>(instruction_word >> ADDR_MODE_SHIFT) & 0x0003
     );
 
     std::uint16_t operand_byte;
-    std::optional<DataWidth> data_width;
+    DataWidth data_width =
+        kDataWidthToMachineCode
+            .TryFindBySecond(
+                static_cast<std::uint16_t>(instruction_word >> DATA_WIDTH_SHIFT) &
+                0x0003
+            )
+            .value_or(DataWidth::kDB);
 
-    if (mode == AddressingMode::Direct) {
-        data_width =
-            kDataWidthToMachineCode.TryFindBySecond(static_cast<std::uint16_t>(
-                (instruction_word & DATA_WIDTH_MASK) >> DATA_WIDTH_SHIFT
-            ));
+    operand_byte = static_cast<uint16_t>(instruction_word);
 
-        operand_byte = static_cast<std::uint16_t>(
-            (instruction_word & DATA_OPERAND_MASK) >> OPERAND_SHIFT
-        );
-    } else {
-        operand_byte = static_cast<std::uint16_t>(
-            (instruction_word & OPERAND_MASK) >> OPERAND_SHIFT
-        );
-    }
     switch (opcode) {
         case Opcode::kLDA: {
             std::uint16_t value = 0;
@@ -105,26 +106,18 @@ void CPU::execute_one() {
             } else if (mode == AddressingMode::Immediate) {
                 value = static_cast<std::uint16_t>(operand_byte);
             } else if (mode == AddressingMode::Direct) {
-                // Variable width read: Use Read() and reinterpret cast the result to
-                // uint16_t
                 auto mem_view = data_memory_->Read(
-                    operand_byte, static_cast<size_t>(data_width.value())
+                    operand_byte, static_cast<size_t>(data_width)
                 );
-                value = *(reinterpret_cast<const std::uint16_t*>(mem_view.data()));
-            } else if (mode == AddressingMode::IndirectRegister) {
-                // value = data_memory_->Read(
-                //     processor_.get_register(static_cast<Register>(operand_byte),
-                //     static_cast<size_t>(data_width.value()))
-                // );
-                //
 
-                // Variable width read: Use Read() and reinterpret cast the result to
-                // uint16_t
+                std::memcpy(&value, mem_view.data(), mem_view.size());
+            } else if (mode == AddressingMode::IndirectRegister) {
                 auto mem_view = data_memory_->Read(
                     processor_.get_register(static_cast<Register>(operand_byte)),
-                    static_cast<size_t>(data_width.value())
+                    static_cast<size_t>(data_width)
                 );
-                value = *(reinterpret_cast<const std::uint16_t*>(mem_view.data()));
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
             }
             processor_.set_register(Register::A, value);
             processor_.update_flags_from_result(value);
@@ -132,28 +125,51 @@ void CPU::execute_one() {
         }
 
         case Opcode::kSTA: {
-            const auto value = processor_.get_register(Register::A);
+            auto value = processor_.get_register(Register::A);
+            std::cout << "REG A VALUE: " << value << '\n';
             if (mode == AddressingMode::Register) {
                 processor_.set_register(static_cast<Register>(operand_byte), value);
             } else {
-                data_memory_->write(operand_byte, value);
+                std::vector<uint8_t> res;
+                res.reserve(2);
+
+                std::cout << static_cast<size_t>(data_width);
+
+                for (std::size_t i = 0; i < std::min(
+                                                static_cast<size_t>(data_width),
+                                                static_cast<size_t>(sizeof(uint16_t))
+                                            );
+                     ++i) {
+                    res.push_back(value);
+                    value = value >> 8;
+                }
+
+                std::cout << res.size() << '\n';
+
+                data_memory_->Write(operand_byte, res);
             }
             break;
         }
 
         case Opcode::kADD: {
             std::uint16_t value = 0;
-
             if (mode == AddressingMode::Register) {
                 value = processor_.get_register(static_cast<Register>(operand_byte));
-            } else if (mode == AddressingMode::IndirectRegister) {
-                value = data_memory_->read(
-                    processor_.get_register(static_cast<Register>(operand_byte))
-                );
+            } else if (mode == AddressingMode::Immediate) {
+                value = static_cast<std::uint16_t>(operand_byte);
             } else if (mode == AddressingMode::Direct) {
-                value = data_memory_->read(operand_byte);
-            } else {
-                value = operand_byte;
+                auto mem_view = data_memory_->Read(
+                    operand_byte, static_cast<size_t>(data_width)
+                );
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
+            } else if (mode == AddressingMode::IndirectRegister) {
+                auto mem_view = data_memory_->Read(
+                    processor_.get_register(static_cast<Register>(operand_byte)),
+                    static_cast<size_t>(data_width)
+                );
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
             }
 
             const auto result =
@@ -168,18 +184,25 @@ void CPU::execute_one() {
 
         case Opcode::kSUB: {
             std::uint16_t value = 0;
-
             if (mode == AddressingMode::Register) {
                 value = processor_.get_register(static_cast<Register>(operand_byte));
-            } else if (mode == AddressingMode::IndirectRegister) {
-                value = data_memory_->read(
-                    processor_.get_register(static_cast<Register>(operand_byte))
-                );
+            } else if (mode == AddressingMode::Immediate) {
+                value = static_cast<std::uint16_t>(operand_byte);
             } else if (mode == AddressingMode::Direct) {
-                value = data_memory_->read(operand_byte);
-            } else {
-                value = operand_byte;
+                auto mem_view = data_memory_->Read(
+                    operand_byte, static_cast<size_t>(data_width)
+                );
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
+            } else if (mode == AddressingMode::IndirectRegister) {
+                auto mem_view = data_memory_->Read(
+                    processor_.get_register(static_cast<Register>(operand_byte)),
+                    static_cast<size_t>(data_width)
+                );
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
             }
+
             const auto result =
                 ALU::sub16(processor_.get_register(Register::A), value);
 
@@ -193,17 +216,23 @@ void CPU::execute_one() {
 
         case Opcode::kMUL: {
             std::uint16_t value = 0;
-
             if (mode == AddressingMode::Register) {
                 value = processor_.get_register(static_cast<Register>(operand_byte));
-            } else if (mode == AddressingMode::IndirectRegister) {
-                value = data_memory_->read(
-                    processor_.get_register(static_cast<Register>(operand_byte))
-                );
+            } else if (mode == AddressingMode::Immediate) {
+                value = static_cast<std::uint16_t>(operand_byte);
             } else if (mode == AddressingMode::Direct) {
-                value = data_memory_->read(operand_byte);
-            } else {
-                value = operand_byte;
+                auto mem_view = data_memory_->Read(
+                    operand_byte, static_cast<size_t>(data_width)
+                );
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
+            } else if (mode == AddressingMode::IndirectRegister) {
+                auto mem_view = data_memory_->Read(
+                    processor_.get_register(static_cast<Register>(operand_byte)),
+                    static_cast<size_t>(data_width)
+                );
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
             }
             const auto result =
                 ALU::mul32(processor_.get_register(Register::A), value);
@@ -217,46 +246,25 @@ void CPU::execute_one() {
             regs.flags.o = result.overflow;
             break;
         }
-        case Opcode::kJNZ: {
-            if (!regs.flags.z) {
-                regs.pc = operand_byte;
-                return;
-            }
-            break;
-        }
-
-        case Opcode::kJC: {
-            if (regs.flags.c) {
-                regs.pc = operand_byte;
-                return;
-            }
-            break;
-        }
-
-        case Opcode::kJNC: {
-            if (!regs.flags.c) {
-                regs.pc = operand_byte;
-                return;
-            }
-            break;
-        }
-
-        case Opcode::kHLT:
-            halted_ = true;
-            return;
         case Opcode::kADC: {
             std::uint16_t value = 0;
-
             if (mode == AddressingMode::Register) {
                 value = processor_.get_register(static_cast<Register>(operand_byte));
-            } else if (mode == AddressingMode::IndirectRegister) {
-                value = data_memory_->read(
-                    processor_.get_register(static_cast<Register>(operand_byte))
-                );
+            } else if (mode == AddressingMode::Immediate) {
+                value = static_cast<std::uint16_t>(operand_byte);
             } else if (mode == AddressingMode::Direct) {
-                value = data_memory_->read(operand_byte);
-            } else {
-                value = operand_byte;
+                auto mem_view = data_memory_->Read(
+                    operand_byte, static_cast<size_t>(data_width)
+                );
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
+            } else if (mode == AddressingMode::IndirectRegister) {
+                auto mem_view = data_memory_->Read(
+                    processor_.get_register(static_cast<Register>(operand_byte)),
+                    static_cast<size_t>(data_width)
+                );
+
+                std::memcpy(&value, mem_view.data(), mem_view.size());
             }
 
             const auto result =
@@ -272,10 +280,18 @@ void CPU::execute_one() {
 
             break;
         }
-        case Opcode::kSBB:
-        case Opcode::kCLC:
-        case Opcode::kCMC:
-        case Opcode::kSTC:
+        case Opcode::kJNZ: {
+            if (!regs.flags.z) {
+                regs.pc = operand_byte;
+                return;
+            }
+            break;
+        }
+
+        case Opcode::kHLT:
+            halted_ = true;
+            return;
+        default:
             throw std::runtime_error("This instruction is not fully implemented yet."
             );
     }

@@ -92,7 +92,7 @@ void Processor::set_register(Register reg, std::uint16_t value) noexcept {
     return 0;
 }
 
-void Processor::update_flags_from_result(std::int16_t value) noexcept {
+void Processor::update_flags_from_result(std::uint16_t value) noexcept {
     regs_.flags.z = (value == 0);
     regs_.flags.n = (value < 0);
 }

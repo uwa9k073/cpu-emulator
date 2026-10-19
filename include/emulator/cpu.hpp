@@ -23,9 +23,9 @@ public:
 
     void reset();
 
-    void load_program(const std::vector<std::uint16_t>& machine_code);
+    void load_program(std::span<MachineWord> machine_code);
 
-    [[nodiscard]] std::optional<std::uint16_t> fetch() const;
+    [[nodiscard]] std::optional<MachineWord> fetch() const;
     void execute_one();
 
     [[nodiscard]] bool halted() const noexcept;

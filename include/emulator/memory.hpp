@@ -19,7 +19,7 @@ public:
 
     void write(std::size_t address, std::uint8_t value);
 
-    std::int16_t read(std::size_t address);
+    std::uint8_t read(std::size_t address);
 
     std::span<const std::uint8_t> Read(std::size_t address, std::size_t size);
     void Write(std::size_t address, std::span<const std::uint8_t> data);
@@ -38,14 +38,14 @@ public:
 
     void reset();
 
-    void write(std::size_t address, std::uint16_t value);
+    void write(std::size_t address, MachineWord value);
 
-    std::uint16_t read(std::size_t address) const;
+    MachineWord read(std::size_t address) const;
 
     std::size_t size() const noexcept;
 
 private:
-    std::vector<std::uint16_t> data_;
+    std::vector<MachineWord> data_;
 };
 
 }  // namespace emulator

@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <iostream>
 #include <string_view>
 #include <vector>
@@ -11,16 +12,15 @@
 #include <emulator/memory.hpp>
 #include <emulator/types.hpp>
 
-constexpr std::array<std::string_view, 24> kArraySum = {
+constexpr std::array<std::string_view, 23> kArraySum = {
 ".program",
 "        LDA     Array", // берем размер массива
 "        STA     R0", // записываем в RO
-"        LDA     #Array", // берем адрес первого элемента
-"        ADD     #1", // смещаем на следющий
+"        LDA     #Array+1", // берем адрес первого элемента
 "        STA     R1", // грузим адрес в R1
 "        LDA     #0", // Обнулям Акк
 "        STA     R2", // Уписываем в R2 регистр суммы
-"Loop:   LDA     [R1]", // Читаем по адресу в памяти
+"Loop:   LDA     [R1]", // Читаем по адресу в памяти (we can additionaly describe how much bytes we can read)
 "        ADD     R2", // прибавляем текущую сумму
 "        STA     R2", // грузим обратно
 "        LDA     R1", // грузим адрес
@@ -43,17 +43,17 @@ constexpr std::array<std::string_view, 32> kArraysConv = {
 ".program",
 "        LDA     Array1", // берем размер массива
 "        STA     R0", // записываем в RO
-"        LDA     #Array1", // берем адрес первого элемента
-"        ADD     #1", // смещаем на следющий
+"        LDA     #Array1+1", // берем адрес первого элемента
 "        STA     R1", // грузим адрес в R1
-"        LDA     #Array2",
-"        ADD     #1",
-"        STA     R2",
+"        LDA     #Array2+1", //берем адрес первого элемента
+"        STA     R2", // грузим адрес в R2
 "        LDA     #0", // Обнулям Акк
 "        STA     R3", // Уписываем в R2 регистр суммы
-"Loop:   LDA     [R1]", // Читаем по адресу в памяти
-"        MUL     [R2]", // прибавляем текущую сумму
-"        ADC     R3",
+"Loop:   LDA     DB [R1]", // Читаем по адресу в памяти (we can additionaly describe how much bytes we can read)
+"        STA     R5", // сохраняем в регистр значение
+"        LDA     DB [R2]", // умножаем на элемент второго массива (we can additionaly describe how much bytes we can read)
+"        MUL     R5",
+"        ADD     R3", //  складываем с текущей суммой
 "        STA     R3", // грузим обратно
 "        LDA     R1", // грузим адрес
 "        ADD     #1", // смещаем
@@ -80,10 +80,10 @@ int main() {
 
     std::cout << "ASSEMBLING\n";
 
-    Assembler assembler;
-    const auto& assembled = assembler.Assemble(kArraysConv);
+    Assembler assembler(kArraysConv);
+    const auto& assembled = assembler.Assemble();
 
-    std::vector<std::uint16_t> machine_code;
+    std::vector<emulator::MachineWord> machine_code;
     machine_code.reserve(assembled.program.size());
     //
     std::cout << "SIZE: " << assembled.program.size() << '\n';
@@ -97,9 +97,9 @@ int main() {
     }
 
     Emulator emu(4096, 256);
-    std::cout << "LOAD DATA\n";
+    // std::cout << "LOAD DATA\n";
     for (const auto& pair : assembled.data) {
-        emu.load_data(assembled.data_labels.at(pair.first).first, pair.second);
+        emu.load_data(assembled.data_labels.at(pair.first), pair.second);
     }
     std::cout << "LOAD INSTRUCTIONS\n";
     emu.load_program(machine_code);
@@ -108,8 +108,26 @@ int main() {
 
     emu.run();
 
+    // std::string input;
+    // while(true){
+    //     std::cout << "step or stop?: ";
+    //     std::cin >> input;
+    //     if(input == "stop" || emu.halted()){
+    //         break;
+    //     }else if(input == "step"){
+    //         emu.step();
+    //     } else {
+    //         continue;
+    //     }
+    // }
+    //
+    auto mem_view = emu.cpu().data_memory()->Read(assembled.data_labels.at("Result"), 2);
+
+    std::uint16_t value;
+    std::memcpy(&value, mem_view.data(), mem_view.size());
+
     std::cout << "Result = "
-              << emu.read_data(assembled.data_labels.at("Result").first) << '\n';
+              << value<< '\n';
 
 
     return 0;
