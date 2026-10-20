@@ -21,37 +21,47 @@ ALUResult16 ALU::sub16(std::uint16_t lhs, std::uint16_t rhs) noexcept {
 }
 
 ALUResult32 ALU::add32(std::uint16_t lhs, std::uint16_t rhs) noexcept {
-    const std::uint32_t sum =
-        static_cast<std::uint32_t>(lhs) + static_cast<std::uint32_t>(rhs);
+    // Сначала приводим к знаковому 16-битному, затем расширяем до знакового
+    // 32-битного
+    const std::int32_t signed_lhs = static_cast<std::int16_t>(lhs);
+    const std::int32_t signed_rhs = static_cast<std::int16_t>(rhs);
 
-    const bool overflow = (sum > std::numeric_limits<std::uint32_t>::max()) ||
-                          (sum < std::numeric_limits<std::uint32_t>::min());
+    const std::int32_t sum = signed_lhs + signed_rhs;
 
     ALUResult32 result{
         .value =
             LongWord{
-                .low = static_cast<uint16_t>(sum),
-                .high = static_cast<uint16_t>(sum >> 16)
+                .low = static_cast<uint16_t>(sum & 0xFFFF),
+                .high = static_cast<uint16_t>((sum >> 16) & 0xFFFF)
             },
-        .zero = sum == 0,
-        .negative = sum < 0,
-        .carry = static_cast<uint16_t>(sum >> 16) != 0,
-        .overflow = overflow
+        .zero = (sum == 0),
+        .negative = (sum < 0),
+        .carry = false,  // Для знаковой арифметики важнее overflow, но можно
+                         // выставить по поведению процессора
+        .overflow =
+            (sum < -32768 || sum > 32767
+            )  // Вышли за пределы 16 бит знакового числа!
     };
     return result;
 }
 
 ALUResult32 ALU::mul32(std::uint16_t lhs, std::uint16_t rhs) noexcept {
-    const std::int32_t product =
-        static_cast<std::int32_t>(lhs) * static_cast<std::int32_t>(rhs);
+    // Корректное знаковое расширение для IMUL
+    const std::int32_t signed_lhs = static_cast<std::int16_t>(lhs);
+    const std::int32_t signed_rhs = static_cast<std::int16_t>(rhs);
+
+    const std::int32_t product = signed_lhs * signed_rhs;
 
     ALUResult32 result;
     result.value.low = static_cast<std::uint16_t>(product & 0xFFFFu);
     result.value.high = static_cast<std::uint16_t>((product >> 16) & 0xFFFFu);
-    result.zero = product == 0;
-    result.carry = result.value.high != 0;
-    result.overflow = (product > std::numeric_limits<std::uint32_t>::max()) ||
-                      (product < std::numeric_limits<std::uint32_t>::min());
+    result.zero = (product == 0);
+    result.negative = (product < 0);
+
+    // Переполнение знакового 16-битного диапазона
+    result.overflow = (product < -32768 || product > 32767);
+    result.carry = result.overflow;  // Дублируем для удобства переходов
+
     return result;
 }
 

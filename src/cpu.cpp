@@ -267,12 +267,28 @@ void CPU::execute_one() {
                 std::memcpy(&value, mem_view.data(), mem_view.size());
             }
 
-            const auto result =
-                ALU::add32(processor_.get_register(Register::A), value);
+            std::uint16_t carry_in = regs.flags.c ? 1 : 0;
+
+            // Вызываем add32, добавляя carry к операнду
+            // (или можно сложить ACC + value + carry_in)
+            const auto result = ALU::add32(
+                processor_.get_register(Register::A),
+                static_cast<std::uint16_t>(value + carry_in)
+            );
+
             processor_.set_register(Register::A, result.value.low);
-            if (result.overflow) {
+
+            // Теперь старшая часть запишется в R4 ВСЕГДА, когда результат операции
+            // (умножения/сложения) или сам перенос заставили число выйти за рамки 16
+            // бит.
+            if (result.overflow || result.value.high != 0) {
                 processor_.set_register(Register::R4, result.value.high);
+            } else {
+                processor_.set_register(
+                    Register::R4, 0
+                );  // Полезно обнулять, если переполнения нет
             }
+
             regs.flags.z = result.zero;
             regs.flags.n = result.negative;
             regs.flags.c = result.carry;

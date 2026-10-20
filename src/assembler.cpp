@@ -155,7 +155,7 @@ void Assembler::ParseInstructionSection(
         auto opcode_opt = kOperationToString.TryFindBySecond(elements[bias]);
         if (!opcode_opt.has_value()) {
             throw std::runtime_error{fmt::format(
-                "Error: the provided command:  {} is unknown", elements[bias]
+                "Error: the provided command:=={}==is unknown", elements[bias]
             )};
         }
         instruction.opcode = opcode_opt.value();
@@ -234,9 +234,10 @@ void Assembler::ParseInstructionSection(
             }
         }
 
-
-        if ((instruction.opcode != Opcode::kLDA && instruction.opcode != Opcode::kSTA && instruction.opcode != Opcode::kJNZ && instruction.opcode != Opcode::kHLT
-            ) &&
+        if ((instruction.opcode != Opcode::kLDA &&
+             instruction.opcode != Opcode::kSTA &&
+             instruction.opcode != Opcode::kJNZ &&
+             instruction.opcode != Opcode::kHLT) &&
             (instruction.mode == AddressingMode::Direct ||
              instruction.mode == AddressingMode::IndirectRegister ||
              (instruction.mode == AddressingMode::Direct &&

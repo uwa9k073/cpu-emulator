@@ -39,7 +39,7 @@ constexpr std::array<std::string_view, 23> kArraySum = {
 };
 
 
-constexpr std::array<std::string_view, 32> kArraysConv = {
+constexpr std::array<std::string_view, 33> kArraysConv = {
 ".program",
 "        LDA     Array1", // берем размер массива
 "        STA     R0", // записываем в RO
@@ -49,11 +49,11 @@ constexpr std::array<std::string_view, 32> kArraysConv = {
 "        STA     R2", // грузим адрес в R2
 "        LDA     #0", // Обнулям Акк
 "        STA     R3", // Уписываем в R2 регистр суммы
-"Loop:   LDA     DB [R1]", // Читаем по адресу в памяти (we can additionaly describe how much bytes we can read)
+"Loop:   LDA     DW [R1]", // Читаем по адресу в памяти (we can additionaly describe how much bytes we can read)
 "        STA     R5", // сохраняем в регистр значение
-"        LDA     DB [R2]", // умножаем на элемент второго массива (we can additionaly describe how much bytes we can read)
-"        MUL     R5",
-"        ADD     R3", //  складываем с текущей суммой
+"        LDA     DW [R2]", // грузим элемент второго массива (we can additionaly describe how much bytes we can read)
+"        MUL     R5", // умножаем на число из Array1
+"        ADC     R3", //  складываем с текущей суммой
 "        STA     R3", // грузим обратно
 "        LDA     R1", // грузим адрес
 "        ADD     #1", // смещаем
@@ -69,14 +69,16 @@ constexpr std::array<std::string_view, 32> kArraysConv = {
 "        STA     Result", // грузим в переменную
 "        HLT", // конец
 ".data",
-"Array1: DB 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
-"Array2: DB 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10",
-"Result: DW 0"
+"Array1: DW 10, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000",
+"Array2: DW 10, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000",
+"Result: DD 0"
 };
 
 int main() {
     using emulator::Assembler;
     using emulator::Emulator;
+
+    std::cout << emulator::kOperationToString.TryFindBySecond("ADC").has_value() << '\n';
 
     std::cout << "ASSEMBLING\n";
 
@@ -97,11 +99,9 @@ int main() {
     }
 
     Emulator emu(4096, 256);
-    // std::cout << "LOAD DATA\n";
     for (const auto& pair : assembled.data) {
         emu.load_data(assembled.data_labels.at(pair.first), pair.second);
     }
-    std::cout << "LOAD INSTRUCTIONS\n";
     emu.load_program(machine_code);
 
     std::cout << "RUN\n";
