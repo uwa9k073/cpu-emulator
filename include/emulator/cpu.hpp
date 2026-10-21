@@ -16,32 +16,32 @@ class CPU {
 public:
     CPU() = default;
 
-    void connect_memory(
+    void ConnectMemory(
         std::shared_ptr<Memory> data_memory,
         std::shared_ptr<ProgramMemory> program_memory
     ) noexcept;
 
-    void reset();
+    void Reset();
 
-    void load_program(std::span<MachineWord> machine_code);
+    void LoadProgram(std::span<MachineWord> machine_code);
 
-    [[nodiscard]] std::optional<MachineWord> fetch() const;
-    void execute_one();
+    [[nodiscard]] std::optional<MachineWord> Fetch();
+    void ExecuteOne();
 
-    [[nodiscard]] bool halted() const noexcept;
-    [[nodiscard]] Processor& get_processor() noexcept;
+    [[nodiscard]] bool IsHalted() const noexcept;
+    [[nodiscard]] Processor& GetProcessor() noexcept;
 
-    [[nodiscard]] const Processor& get_processor() const noexcept;
+    [[nodiscard]] const Processor& GetProcessor() const noexcept;
 
-    [[nodiscard]] std::shared_ptr<Memory> data_memory() const noexcept;
+    [[nodiscard]] std::shared_ptr<Memory> GetDataMemory() const noexcept;
 
-    [[nodiscard]] std::shared_ptr<ProgramMemory> program_memory() const noexcept;
+    [[nodiscard]] std::shared_ptr<ProgramMemory> GetProgramMemory() const noexcept;
 
 private:
-    Processor processor_{};
-    std::shared_ptr<Memory> data_memory_;
-    std::shared_ptr<ProgramMemory> program_memory_;
-    bool halted_ = false;
+    Processor _processor{};
+    std::shared_ptr<Memory> _data_memory;
+    std::shared_ptr<ProgramMemory> _program_memory;
+    bool _halted = false;
 };
 
 }  // namespace emulator

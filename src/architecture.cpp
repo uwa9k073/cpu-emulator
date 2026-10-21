@@ -1,4 +1,5 @@
 #include <emulator/architechture.hpp>
+#include "emulator/types.hpp"
 
 namespace emulator {
 
@@ -94,7 +95,12 @@ void Processor::set_register(Register reg, std::uint16_t value) noexcept {
 
 void Processor::update_flags_from_result(std::uint16_t value) noexcept {
     regs_.flags.z = (value == 0);
-    regs_.flags.n = (value < 0);
+
+    // Bit 15 is the sign bit of a 16-bit two's-complement value.
+    regs_.flags.n = (value & 0x8000u) != 0;
 }
 
+void Processor::UpdateFlags(Flags flags) noexcept { regs_.flags = flags; }
+
+void Processor::IncrementPc() { ++regs_.pc; }
 }  // namespace emulator

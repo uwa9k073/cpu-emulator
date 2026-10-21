@@ -24,6 +24,10 @@ public:
 
     void update_flags_from_result(std::uint16_t value) noexcept;
 
+    void UpdateFlags(Flags flags) noexcept;
+
+    void IncrementPc();
+
 private:
     Registers regs_{};
 };

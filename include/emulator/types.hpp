@@ -9,7 +9,7 @@
 
 namespace emulator {
 
-using MachineWord = std::uint32_t;
+using MachineWord = std::uint16_t;
 
 enum class Register : std::uint16_t {
     A = 0,
@@ -87,7 +87,7 @@ struct Registers {
     std::uint16_t h = 0;
     std::uint16_t l = 0;
     std::uint16_t pc = 0;
-    std::uint16_t ir = 0;
+    MachineWord ir = 0;
     Flags flags{};
 };
 
@@ -154,7 +154,7 @@ constexpr std::string_view to_string(Register reg) noexcept {
 template <>
 struct fmt::formatter<emulator::Registers> {
     // Default to hex ('x'), allow decimal ('d')
-    char presentation = 'x';
+    char presentation = 'd';
 
     constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
         auto it = ctx.begin(), end = ctx.end();

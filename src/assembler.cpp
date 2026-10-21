@@ -13,14 +13,15 @@
 #include <userver/utils/from_string.hpp>
 
 #include <userver/utils/text.hpp>
+#include <userver/utils/text_light.hpp>
 
 namespace emulator {
 
 namespace {
 constexpr MachineWord OPERAND_SHIFT = 0;
-constexpr MachineWord WIDTH_SHIFT = 24;
-constexpr MachineWord ADDR_MODE_SHIFT = 26;
-constexpr MachineWord OPCODE_SHIFT = 28;
+constexpr MachineWord WIDTH_SHIFT = 9;
+constexpr MachineWord ADDR_MODE_SHIFT = 11;
+constexpr MachineWord OPCODE_SHIFT = 13;
 }  // namespace
 
 Assembler::Assembler(std::span<const std::string_view> source_lines)
@@ -350,7 +351,16 @@ void Assembler::FillMachineCode(AssemblerOutput& output) const {
                     std::cout << "OPERAND: " << item.operand << ", width: "
                               << kDataWidthToString.TryFind(item.width).value()
                               << '\n';
+
+                    size_t plus_pos = item.operand.find('+');
+                    if(plus_pos == std::string::npos){
+
                     operand_value = output.data_labels.at(item.operand);
+                    }else{
+                        auto split = userver::utils::text::Split(item.operand, "+");
+
+                        operand_value = output.data_labels.at(split.front()) + userver::utils::FromString<uint16_t>(split.back());
+                    }
                     instruction |=
                         (static_cast<MachineWord>(
                              kDataWidthToMachineCode.TryFind(item.width).value()

@@ -13,6 +13,8 @@ public:
     static ALUResult32 add32(std::uint16_t lhs, std::uint16_t rhs) noexcept;
 
     static ALUResult32 mul32(std::uint16_t lhs, std::uint16_t rhs) noexcept;
+
+    static ALUResult32 ADC32(std::uint16_t lhs, std::uint16_t rhs, bool carry_in) noexcept;
 };
 
 }  // namespace emulator

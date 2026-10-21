@@ -13,7 +13,7 @@ namespace emulator {
 
 class Memory {
 public:
-    explicit Memory(std::size_t size = 4096);
+    explicit Memory(std::size_t size = 512);
 
     void reset();
 

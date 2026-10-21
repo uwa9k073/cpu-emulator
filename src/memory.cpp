@@ -5,7 +5,7 @@
 
 namespace emulator {
 
-Memory::Memory(std::size_t size) : data_(size, 0) {};
+Memory::Memory(std::size_t size) : data_(size, 0){};
 
 void Memory::reset() { data_.assign(data_.size(), 0); }
 
