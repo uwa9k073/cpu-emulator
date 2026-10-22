@@ -105,17 +105,17 @@ constexpr std::array<std::int16_t, 10> kArr1 = {1, 2, 3, 4, 5, 6, 7000, 8, 9, 10
 constexpr std::array<std::int16_t, 10> kArr2 = {1, 2, 3, 4, 5, 6, -7, 8, 9, 10};
 
 int main() {
-    using emulator::Assembler;
-    using emulator::Emulator;
+    using cpu_emulator::core::Assembler;
+    using cpu_emulator::core::Emulator;
 
-    std::cout << emulator::kOperationToString.TryFindBySecond("ADC").has_value() << '\n';
+    std::cout << cpu_emulator::core::kOperationToString.TryFindBySecond("ADC").has_value() << '\n';
 
     std::cout << "ASSEMBLING\n";
 
     Assembler assembler(kArraysConv);
     const auto& assembled = assembler.Assemble();
 
-    std::vector<emulator::MachineWord> machine_code;
+    std::vector<cpu_emulator::core::MachineWord> machine_code;
     machine_code.reserve(assembled.program.size());
     //
     std::cout << "SIZE: " << assembled.program.size() << '\n';
@@ -123,7 +123,7 @@ int main() {
     for (const auto& line : assembled.program) {
         machine_code.push_back(line.machine_code);
         std::cout << line.address << " : "
-                  << emulator::kOperationToString.TryFind(line.opcode).value() << " "
+                  << cpu_emulator::core::kOperationToString.TryFind(line.opcode).value() << " "
                   << static_cast<int>(line.mode) << " " << line.operand << " => 0x"
                   << std::hex << line.machine_code << std::dec << '\n';
     }

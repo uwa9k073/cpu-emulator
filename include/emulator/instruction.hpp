@@ -6,7 +6,7 @@
 #include <userver/utils/string_literal.hpp>
 #include <userver/utils/trivial_map.hpp>
 
-namespace emulator {
+namespace cpu_emulator::core {
 // Уникальные команды (опкоды) процессора
 // Уникальные команды (опкоды) процессора
 enum class Opcode : std::uint16_t {
@@ -26,7 +26,7 @@ struct Instruction {
     std::string raw;
     Opcode opcode;
     AddressingMode mode = AddressingMode::Immediate;
-    DataWidth width = DataWidth::kDB; // <--- ДОБАВЛЕНО: для хранения ширины данных
+    DataWidth width = DataWidth::kDB;  // <--- ДОБАВЛЕНО: для хранения ширины данных
     MachineWord machine_code = 0;
     std::uint16_t address = 0;
 };
@@ -43,4 +43,4 @@ constexpr userver::utils::TrivialBiMap kOperationToString = [](auto selector) {
         .Case(Opcode::kADC, "ADC");
 };
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

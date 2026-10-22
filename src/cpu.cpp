@@ -7,7 +7,7 @@
 #include <optional>
 #include <vector>
 
-namespace emulator {
+namespace cpu_emulator::core {
 
 namespace {
 constexpr int DATA_WIDTH_SHIFT = 9;
@@ -72,8 +72,6 @@ void CPU::ExecuteOne() {
     const auto opcode = static_cast<Opcode>(
         static_cast<std::uint16_t>(instruction_word >> OPCODE_SHIFT) & 0x000f
     );
-
-    std::cout << "CMD: " << kOperationToString.TryFind(opcode).value() << '\n';
     const auto mode = static_cast<AddressingMode>(
         static_cast<std::uint8_t>(instruction_word >> ADDR_MODE_SHIFT) & 0x0003
     );
@@ -87,7 +85,8 @@ void CPU::ExecuteOne() {
             )
             .value_or(DataWidth::kDB);
 
-    operand_byte = static_cast<uint16_t>(instruction_word) & 0x01FF; // 0000 0001 1111 1111
+    operand_byte =
+        static_cast<uint16_t>(instruction_word) & 0x01FF;  // 0000 0001 1111 1111
 
     switch (opcode) {
         case Opcode::kLDA: {
@@ -103,8 +102,6 @@ void CPU::ExecuteOne() {
 
                 std::memcpy(&value, mem_view.data(), mem_view.size());
             } else if (mode == AddressingMode::IndirectRegister) {
-                std::cout << "DATA WIDTH: "
-                          << kDataWidthToString.TryFind(data_width).value() << '\n';
                 auto mem_view = _data_memory->Read(
                     _processor.get_register(static_cast<Register>(operand_byte)),
                     static_cast<size_t>(data_width)
@@ -324,4 +321,4 @@ void CPU::ExecuteOne() {
     return _program_memory;
 }
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

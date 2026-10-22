@@ -1,7 +1,7 @@
 #include <emulator/architechture.hpp>
 #include "emulator/types.hpp"
 
-namespace emulator {
+namespace cpu_emulator::core {
 
 void Processor::reset() noexcept { regs_ = {}; }
 
@@ -103,4 +103,4 @@ void Processor::update_flags_from_result(std::uint16_t value) noexcept {
 void Processor::UpdateFlags(Flags flags) noexcept { regs_.flags = flags; }
 
 void Processor::IncrementPc() { ++regs_.pc; }
-}  // namespace emulator
+}  // namespace cpu_emulator::core

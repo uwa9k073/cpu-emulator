@@ -14,8 +14,9 @@
 
 #include <userver/utils/text.hpp>
 #include <userver/utils/text_light.hpp>
+#include "emulator/exceptions.hpp"
 
-namespace emulator {
+namespace cpu_emulator::core {
 
 namespace {
 constexpr MachineWord OPERAND_SHIFT = 0;
@@ -33,6 +34,10 @@ Assembler::Assembler(std::span<const std::string_view> source_lines)
     auto instruction_begin = std::ranges::find(_source_lines, ".program");
     auto data_begin = std::ranges::find(_source_lines, ".data");
 
+    if (instruction_begin == _source_lines.end()) {
+        throw ParsingError{"Error while parsing asm: section .program not found"};
+    }
+
     size_t instruction_size = _source_lines.end() - instruction_begin;
     size_t data_size = _source_lines.end() - data_begin;
 
@@ -49,14 +54,16 @@ Assembler::Assembler(std::span<const std::string_view> source_lines)
     return output;
 }
 
-void emulator::Assembler::ParseDataSection(
+void Assembler::ParseDataSection(
     AssemblerOutput& output, Iterator begin, std::size_t size
 ) {
     auto data_span =
         _source_lines.subspan(begin + 1 - _source_lines.begin(), size - 1);
     std::size_t data_addr = 0;
     for (auto line : data_span) {
-        auto line_view = userver::utils::text::TrimView(line);
+        auto line_without_comments =
+            userver::utils::text::SplitIntoStringViewVector(line, ";").front();
+        auto line_view = userver::utils::text::TrimView(line_without_comments);
         if (line_view.empty()) {
             continue;
         }
@@ -68,11 +75,10 @@ void emulator::Assembler::ParseDataSection(
 
         auto colon_pos = elements.front().find_first_of(":");
         if (!std::isalpha(elements.front().front())) {
-            throw std::runtime_error{"Variable name must start with letter"};
+            throw ParsingError{"Variable name must start with letter"};
         }
         std::string var_name = elements.front().substr(0, colon_pos);
         output.data_labels[var_name] = data_addr;
-        std::cout << "VARNAME: " << var_name << '\n';
 
         auto width_code =
             kDataWidthToString.TryFindBySecond(elements[1]).value_or(DataWidth::kDW);
@@ -348,18 +354,16 @@ void Assembler::FillMachineCode(AssemblerOutput& output) const {
                 }
 
                 case AddressingMode::Direct:
-                    std::cout << "OPERAND: " << item.operand << ", width: "
-                              << kDataWidthToString.TryFind(item.width).value()
-                              << '\n';
 
                     size_t plus_pos = item.operand.find('+');
-                    if(plus_pos == std::string::npos){
-
-                    operand_value = output.data_labels.at(item.operand);
-                    }else{
+                    if (plus_pos == std::string::npos) {
+                        operand_value = output.data_labels.at(item.operand);
+                    } else {
                         auto split = userver::utils::text::Split(item.operand, "+");
 
-                        operand_value = output.data_labels.at(split.front()) + userver::utils::FromString<uint16_t>(split.back());
+                        operand_value =
+                            output.data_labels.at(split.front()) +
+                            userver::utils::FromString<uint16_t>(split.back());
                     }
                     instruction |=
                         (static_cast<MachineWord>(
@@ -374,4 +378,4 @@ void Assembler::FillMachineCode(AssemblerOutput& output) const {
         item.machine_code = instruction;
     }
 }
-}  // namespace emulator
+}  // namespace cpu_emulator::core

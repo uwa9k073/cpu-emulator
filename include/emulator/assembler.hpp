@@ -14,7 +14,7 @@
 #include <emulator/instruction.hpp>
 #include <emulator/types.hpp>
 
-namespace emulator {
+namespace cpu_emulator::core {
 class Assembler {
 public:
     explicit Assembler(std::span<const std::string_view> source_lines);
@@ -23,13 +23,15 @@ public:
 
     struct AssemblerOutput {
         std::vector<Instruction> program;  // инструкции (PC 0, 1, 2, 3...)
-        std::vector<std::pair<std::string, std::vector<std::uint8_t>>> data;  // переменные
-        LabelMap labels;  // программные метки
+        std::vector<std::pair<std::string, std::vector<std::uint8_t>>>
+            data;              // переменные
+        LabelMap labels;       // программные метки
         LabelMap data_labels;  // адреса переменных
         std::map<std::uint16_t, DataWidth> data_width;
     };
 
     [[nodiscard]] AssemblerOutput Assemble();
+
 private:
     std::span<const std::string_view> _source_lines;
 
@@ -43,4 +45,4 @@ private:
     void FillMachineCode(AssemblerOutput& output) const;
 };
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

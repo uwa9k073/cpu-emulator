@@ -2,7 +2,7 @@
 #include <emulator/alu.hpp>
 #include <iostream>
 
-namespace emulator {
+namespace cpu_emulator::core {
 
 ALUResult16 ALU::add16(std::uint16_t lhs, std::uint16_t rhs) noexcept {
     // Arithmetic is performed on the 16-bit bit patterns.
@@ -123,9 +123,7 @@ ALUResult32 ALU::mul32(std::uint16_t lhs, std::uint16_t rhs) noexcept {
 
     const std::int32_t signed_rhs = static_cast<std::int16_t>(rhs);
 
-
     const std::int32_t product = signed_lhs * signed_rhs;
-    std::cout << fmt::format("SIGNED VARS: {} * {} = {}\n",signed_lhs, signed_rhs, product);
 
     /*
      * Reinterpret the signed 32-bit result as raw bits.
@@ -203,4 +201,4 @@ ALUResult32 ALU::ADC32(std::uint16_t lhs, std::uint16_t rhs, bool carry_in)
     };
 }
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

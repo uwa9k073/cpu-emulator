@@ -10,7 +10,7 @@
 #include <emulator/memory.hpp>
 #include <emulator/types.hpp>
 
-namespace emulator {
+namespace cpu_emulator::core {
 
 class Emulator {
 public:
@@ -59,4 +59,4 @@ private:
     CPU cpu_;
 };
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

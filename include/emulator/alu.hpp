@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <emulator/types.hpp>
-namespace emulator {
+namespace cpu_emulator::core {
 
 class ALU {
 public:
@@ -14,7 +14,8 @@ public:
 
     static ALUResult32 mul32(std::uint16_t lhs, std::uint16_t rhs) noexcept;
 
-    static ALUResult32 ADC32(std::uint16_t lhs, std::uint16_t rhs, bool carry_in) noexcept;
+    static ALUResult32 ADC32(std::uint16_t lhs, std::uint16_t rhs, bool carry_in)
+        noexcept;
 };
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

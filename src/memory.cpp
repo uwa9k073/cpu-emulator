@@ -3,7 +3,7 @@
 #include <iostream>
 #include "emulator/types.hpp"
 
-namespace emulator {
+namespace cpu_emulator::core {
 
 Memory::Memory(std::size_t size) : data_(size, 0){};
 
@@ -31,10 +31,6 @@ void Memory::Write(std::size_t address, std::span<const std::uint8_t> data) {
         throw std::out_of_range("Memory write out of bounds");
     }
 
-    std::cout << "Calling the write func\n" << data.size() << '\n';
-    for (std::uint16_t val : data) {
-        std::cout << val << '\n';
-    }
     std::copy(data.begin(), data.end(), data_.begin() + address);
 }
 
@@ -63,4 +59,4 @@ MachineWord ProgramMemory::read(std::size_t address) const {
 
 std::size_t ProgramMemory::size() const noexcept { return data_.size(); }
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

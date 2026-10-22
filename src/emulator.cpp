@@ -2,7 +2,7 @@
 #include <emulator/types.hpp>
 #include <iostream>
 
-namespace emulator {
+namespace cpu_emulator::core {
 
 Emulator::Emulator()
     : data_memory_(std::make_shared<Memory>(4096)),
@@ -37,17 +37,12 @@ void Emulator::step() {
     if (!cpu_.IsHalted()) {
         cpu_.ExecuteOne();
     }
-    std::cout << fmt::format("{}", cpu_.GetProcessor().registers()) << '\n';
 }
 
 void Emulator::run() {
-    int counter = 0;
     while (!cpu_.IsHalted()) {
         step();
-        ++counter;
     }
-
-    std::cout << "COUNT OF INSTRUCTIONS: " << counter << '\n';
 }
 
 [[nodiscard]] CPU& Emulator::cpu() noexcept { return cpu_; }
@@ -103,4 +98,4 @@ void Emulator::set_register(Register reg, std::int16_t value) noexcept {
     return cpu_.GetProcessor().get_register(reg);
 }
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-namespace emulator {
+namespace cpu_emulator::core {
 
 class Memory {
 public:
@@ -48,4 +48,4 @@ private:
     std::vector<MachineWord> data_;
 };
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core

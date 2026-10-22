@@ -3,7 +3,7 @@
 
 #include <emulator/types.hpp>
 
-namespace emulator {
+namespace cpu_emulator::core {
 class Processor {
 public:
     Processor() = default;
@@ -32,4 +32,4 @@ private:
     Registers regs_{};
 };
 
-}  // namespace emulator
+}  // namespace cpu_emulator::core
