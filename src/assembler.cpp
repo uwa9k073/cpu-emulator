@@ -130,7 +130,9 @@ void Assembler::ParseInstructionSection(
     std::uint16_t pc = 0;
 
     for (auto it = start_it; it != end_it; ++it) {
-        std::string_view line = userver::utils::text::TrimView(*it);
+        auto line_without_comments =
+            userver::utils::text::SplitIntoStringViewVector(*it, ";").front();
+        std::string_view line = userver::utils::text::TrimView(line_without_comments);
         if (line.empty()) {
             continue;
         }

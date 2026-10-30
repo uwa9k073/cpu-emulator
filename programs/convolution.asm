@@ -1,32 +1,57 @@
-.data
-    Array1: DD 10, 12, -7, 3, -1, 8, 12, -7, 3, -1, 8 ; массив с 32 разрядными числами. первый элемент кол-во чисел в массиве дальше числа
-    Array2: DD 10 ,12, -7, 3, -1, 8, 12, -7, 3, -1, 8 ; 
-    Result: DD 0
 .program
-    LDA Array1          ; Acc = 10
-    STA R0              ; R0 = Acc
-    LDA #Array1+4       ; Acc = 0x04
-    STA R1              ; R1 = Acc
-    LDA #Array2+4       ; Acc = 0x2C
-    STA R2              ; R2 = Acc
-    LDA #0              ; Acc = 0
-    STA R3              ; R3 = 0
-
-Loop:   LDA [R1]        ; Acc = 12
-        MUL [R2]        ; Acc = Acc * 12
-        ADС R3          ; it 1: Acc = Acc + 0, it2: Acc = Acc + 144 ...
-        STA R3          ; R3 = Acc (acc = 144)
-        LDA R1          ; Acc = R1 (0x04)
-        ADD #4          ; Acc = Acc + 1 (0x04 + 4)
-        STA R1          ; R1 = Acc (0x08)
-        LDA R2          ; Acc = R2 (0x2C)
-        ADD #4          ; Acc = Acc + 4 (0x30)
-        STA R2          ; R2 = Acc (0x30)
-        LDA R0          ; Acc = 10
-        SUB #1          ; Acc = Acc - 1 (9)
-        STA R0          ; R0  = Acc (9)
-        JNZ Loop        ; JMP if ACC !=0
-
-    LDA R3              ; Acc = R3 (result sim)
-    STA Result          ; Result = R3
-    HLT                 ; stop
+    ; R0 = количество элементов
+            LDA     Array1
+            STA     R0
+    ; R1 = адрес первого элемента Array1
+            LDA     #Array1+2
+            STA     R1
+    ; R2 = адрес первого элемента Array2
+            LDA     #Array2+2
+            STA     R2
+    ; R4:R3 = 32-битная сумма
+    ; R3 = low, R4 = high
+            LDA     #0
+            STA     R3
+            STA     R4
+Loop:
+    ; A = Array1[i]
+            LDA     DW [R1]
+            STA     R5
+    ; A = Array2[i]
+            LDA     DW [R2]
+    ; H:A = Array2[i] * Array1[i]
+            MUL     R5
+    ; Сохраняем младшую часть произведения
+            STA     R6
+    ; R3 = R3 + product.low
+            LDA     R3
+            ADD     R6
+            STA     R3
+    ; R4 = R4 + product.high + carry
+            LDA     R4
+            ADC     H
+            STA     R4
+    ; R1 += 2
+            LDA     R1
+            ADD     #2
+            STA     R1
+    ; R2 += 2
+            LDA     R2
+            ADD     #2
+            STA     R2
+    ; R0--
+            LDA     R0
+            SUB     #1
+            STA     R0
+    ; если R0 != 0 повторяем
+            JNZ     Loop
+    ; Сохраняем 32-битный результат R4:R3
+            LDA     R3
+            STA     DW Result
+            LDA     R4
+            STA     DW Result+2
+            HLT
+.data
+    Array1: DW 10, 1, 2, 3, 4, 5, 6, 7000, 8, 9, 10,
+    Array2: DW 10, 1, 2, 3, 4, 5, 6, -7, 8, 9, 10,
+    Result: DD 0
