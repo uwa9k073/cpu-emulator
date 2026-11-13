@@ -2,3 +2,17 @@ Diagnostics:
   UnusedIncludes: Strict
 CompileFlags:
   CompilationDatabase: "build_debug"
+  Add: ["-std=c++20", "-xc++"]
+  Remove: -Wno-module-odr-violation
+
+
+Completion:
+  AllScopes: true
+InlayHints:
+  BlockEnd: false
+  Designators: true
+  Enabled: true
+  ParameterNames: true
+  DeducedTypes: true
+  # DefaultArguments: false
+  TypeNameLimit: 24

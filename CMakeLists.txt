@@ -3,38 +3,34 @@ project(cpu-emulator CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# FTXUI dependency
-# include(FetchContent)
-# FetchContent_Declare(ftxui
-#   GIT_REPOSITORY https://github.com/ArthurSonzogni/FTXUI.git
-#   GIT_TAG v7.0.3
-# )
-# FetchContent_MakeAvailable(ftxui)
-
-# Main executable
-add_executable(${PROJECT_NAME}
+find_package(
+  userver
+  COMPONENTS universal
+  REQUIRED
 )
 
-# target_link_libraries(${PROJECT_NAME}
-#   PRIVATE ftxui::component
-#   PRIVATE ftxui::dom
-#   PRIVATE ftxui::screen
-# )
+file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp")
 
-# Module sources
-target_sources(${PROJECT_NAME}
-    PRIVATE
-        src/main.cpp # Обычный файл с точкой входа int main()
-    PUBLIC FILE_SET CXX_MODULES FILES
-        src/modules/types.cppm
-        src/modules/architecture.cppm
-        src/modules/alu.cppm
-        src/modules/memory.cppm
-        src/modules/cpu.cppm
-        src/modules/instruction.cppm
-        src/modules/assembler.cppm
-        src/modules/emulator.cppm
+list(FILTER SOURCES EXCLUDE REGEX ".*(_test|_benchmark)\\.cpp$")
+
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
+
+target_link_libraries(${PROJECT_NAME}
+  PRIVATE userver::universal
 )
+
+target_include_directories(
+          ${PROJECT_NAME} PUBLIC
+          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+          $<INSTALL_INTERFACE:include> PRIVATE
+          ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
+
+option(CPU_EMULATOR_BUILD_SAMPLES "build samples" OFF)
+
+if(CPU_EMULATOR_BUILD_SAMPLES)
+  add_subdirectory(samples)
+endif()
